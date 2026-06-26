@@ -3,6 +3,7 @@ import { getVisionApiKey, getVisionServiceUrl } from "@/lib/server/vision";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 export async function GET() {
   const url = getVisionServiceUrl();
