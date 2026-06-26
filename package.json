@@ -1,0 +1,39 @@
+{
+  "name": "credisafe",
+  "version": "3.2.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run test && npm run typecheck && npm run build",
+    "test": "tsx --test tests/**/*.test.ts",
+    "dev:web": "next dev",
+    "dev:vision": "python -m uvicorn vision_service.app.main:app --host 127.0.0.1 --port 8000 --reload",
+    "vision:check": "python -m compileall vision_service",
+    "vision:test": "python -m unittest discover vision_service/tests",
+    "check:all": "npm run test && npm run vision:test && npm run typecheck && npm run build"
+  },
+  "dependencies": {
+    "@supabase/ssr": "0.12.0",
+    "@supabase/supabase-js": "2.108.2",
+    "framer-motion": "12.40.0",
+    "gsap": "3.15.0",
+    "lenis": "1.3.23",
+    "lucide-react": "1.21.0",
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.1",
+    "@types/node": "25.9.3",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "tailwindcss": "4.3.1",
+    "tsx": "4.20.6",
+    "typescript": "6.0.3"
+  }
+}

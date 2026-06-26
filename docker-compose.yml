@@ -1,0 +1,11 @@
+services:
+  vision:
+    build:
+      context: .
+      dockerfile: vision_service/Dockerfile
+    environment:
+      VISION_API_KEY: ${VISION_API_KEY:-local-development-key}
+      VISION_ALLOWED_ORIGINS: http://localhost:3000
+      VISION_MAX_UPLOAD_MB: 25
+    ports:
+      - "8000:8000"

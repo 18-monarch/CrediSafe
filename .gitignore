@@ -1,0 +1,35 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+coverage/
+.vercel/
+.turbo/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Temporary vision files
+vision_service/tmp/
+uploads/
+
+# Logs and build metadata
+*.log
+*.tsbuildinfo
+
+# Operating system / editors
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
