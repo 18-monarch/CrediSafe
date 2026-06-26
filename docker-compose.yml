@@ -1,11 +1,18 @@
 services:
   vision:
     build:
-      context: .
-      dockerfile: vision_service/Dockerfile
+      context: ./vision_service
+      dockerfile: Dockerfile
     environment:
+      PORT: 8000
+      VISION_ENV: development
       VISION_API_KEY: ${VISION_API_KEY:-local-development-key}
+      VISION_REQUIRE_API_KEY: "true"
       VISION_ALLOWED_ORIGINS: http://localhost:3000
       VISION_MAX_UPLOAD_MB: 25
+      VISION_MAX_SAMPLED_FRAMES: 120
+      VISION_MAX_CONCURRENT_ANALYSES: 1
+      VISION_PRELOAD_MODELS: "true"
+      VISION_EXPOSE_INTERNAL_ERRORS: "true"
     ports:
       - "8000:8000"

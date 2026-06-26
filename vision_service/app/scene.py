@@ -77,7 +77,7 @@ def get_object_model() -> Any | None:
         try:
             _OBJECT_MODEL = YOLO(str(path))
         except Exception as exc:  # pragma: no cover - model/runtime dependent
-            _OBJECT_MODEL_ERROR = str(exc)
+            _OBJECT_MODEL_ERROR = f"Model load failed ({type(exc).__name__})"
         return _OBJECT_MODEL
 
 
@@ -101,7 +101,7 @@ def get_helmet_model() -> Any | None:
         try:
             _HELMET_MODEL = YOLO(str(path))
         except Exception as exc:  # pragma: no cover
-            _HELMET_MODEL_ERROR = str(exc)
+            _HELMET_MODEL_ERROR = f"Model load failed ({type(exc).__name__})"
         return _HELMET_MODEL
 
 
@@ -111,12 +111,12 @@ def capabilities() -> dict[str, Any]:
     return {
         "object_detection": {
             "available": object_model is not None,
-            "model": str(_object_model_path()) if object_model is not None else None,
+            "model": _object_model_path().name if object_model is not None and _object_model_path() else None,
             "message": _OBJECT_MODEL_ERROR,
         },
         "helmet_detection": {
             "available": helmet_model is not None,
-            "model": str(_helmet_model_path()) if helmet_model is not None else None,
+            "model": _helmet_model_path().name if helmet_model is not None and _helmet_model_path() else None,
             "message": _HELMET_MODEL_ERROR,
         },
         "phone_observation": {
