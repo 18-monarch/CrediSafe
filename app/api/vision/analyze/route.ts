@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { apiError, apiSuccess } from "@/lib/server/http";
 import { requireUser } from "@/lib/server/auth";
 import { serializeVideoAnalysis } from "@/lib/server/serializers";
-import { getVisionApiKey, getVisionServiceUrl, getVisionUploadLimitBytes, normalizeRegistration } from "@/lib/server/vision";
+import { getVisionApiKey, getVisionRequestTimeoutMs, getVisionServiceUrl, getVisionUploadLimitBytes, normalizeRegistration } from "@/lib/server/vision";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const runtime = "nodejs";
@@ -39,6 +39,10 @@ export async function POST(request: Request) {
   }
   const serviceUrl = getVisionServiceUrl();
   if (!serviceUrl) return apiError("Vision service is not configured. Set VISION_SERVICE_URL.", 503);
+  const visionApiKey = getVisionApiKey();
+  if (process.env.NODE_ENV === "production" && !visionApiKey) {
+    return apiError("Vision service authentication is not configured. Set VISION_API_KEY.", 503);
+  }
 
   const incoming = await request.formData().catch(() => null);
   if (!incoming) return apiError("Invalid multipart request", 400);
@@ -86,15 +90,18 @@ export async function POST(request: Request) {
   if (expectedPlate) serviceForm.append("expected_plate", expectedPlate);
   if (tripId) serviceForm.append("trip_id", tripId);
 
+  const requestId = randomUUID();
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 170_000);
+  const timeout = setTimeout(() => controller.abort(), getVisionRequestTimeoutMs());
   let body: any;
   try {
     const response = await fetch(`${serviceUrl}/v1/analyze`, {
       method: "POST",
       body: serviceForm,
       signal: controller.signal,
-      headers: getVisionApiKey() ? { "X-CrediSafe-Key": getVisionApiKey()! } : undefined,
+      headers: visionApiKey
+        ? { "X-CrediSafe-Key": visionApiKey, "X-Request-ID": requestId }
+        : { "X-Request-ID": requestId },
       cache: "no-store",
     });
     body = await response.json().catch(() => null);

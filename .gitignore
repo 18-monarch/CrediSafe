@@ -32,4 +32,6 @@ uploads/
 Thumbs.db
 .vscode/*
 !.vscode/extensions.json
-!.vscode/settings.json
+!.vscode/settings.json.hosting-backup-v3.3/
+
+.hosting-backup-v3.3/
