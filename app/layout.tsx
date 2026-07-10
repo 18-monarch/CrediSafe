@@ -4,7 +4,7 @@ import "./globals.css";
 import { PwaRuntime } from "@/components/pwa/PwaRuntime";
 
 export const metadata: Metadata = {
-  title: "CrediSafe â€” Safe Driving. Real Rewards.",
+  title: "CrediSafe - Safe Driving. Real Rewards.",
   description:
     "CrediSafe combines trip intelligence, vehicle verification, safety scoring, XP, rewards and clear driver insights.",
   manifest: "/manifest.webmanifest",
