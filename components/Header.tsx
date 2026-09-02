@@ -24,9 +24,9 @@ export function Header() {
         <a href="#pilot">Pilot</a>
       </nav>
       <a
-        href="https://github.com/18-monarch/CrediSafeAndroid/releases/download/v2.7.0-beta.1/CrediSafe-v2.7.0-beta.1-release.apk"
+        href="https://github.com/18-monarch/CrediSafeAndroid/releases/download/v2.7.0-beta.2/CrediSafe-2.7.0-beta.2.apk"
         className="primary-button compact header-app-link"
-        aria-label="Download CrediSafe v2.7.0 Beta 1 signed Android APK"
+        aria-label="Download CrediSafe v2.7.0 Beta 2 signed Android APK"
       >
         <span className="header-desktop-label">Download Android beta</span>
         <span className="header-mobile-label">Download beta</span>
