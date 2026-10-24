@@ -24,12 +24,12 @@ export function Header() {
         <a href="#pilot">Pilot</a>
       </nav>
       <a
-        href="https://github.com/18-monarch/CrediSafeAndroid/releases/download/v2.7.0-beta.2/CrediSafe-2.7.0-beta.2.apk"
+        href="/download/android"
         className="primary-button compact header-app-link"
-        aria-label="Download CrediSafe v2.7.0 Beta 2 signed Android APK"
+        aria-label="Get CrediSafe v2.7.0 Beta 3 signed Android build"
       >
-        <span className="header-desktop-label">Download Android beta</span>
-        <span className="header-mobile-label">Download beta</span>
+        <span className="header-desktop-label">Get Android beta 3</span>
+        <span className="header-mobile-label">Beta 3 APK</span>
       </a>
     </header>
   );
