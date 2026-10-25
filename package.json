@@ -8,7 +8,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "check": "npm run test && npm run typecheck && npm run build",
-    "test": "tsx --test tests/**/*.test.ts",
+    "test": "tsx --test tests/*.test.ts",
     "dev:web": "next dev",
     "dev:vision": "python -m uvicorn vision_service.app.main:app --host 127.0.0.1 --port 8000 --reload",
     "vision:check": "python -m compileall vision_service",
