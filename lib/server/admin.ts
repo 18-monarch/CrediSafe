@@ -1,17 +1,12 @@
 import { requireUser } from "@/lib/server/auth";
-
-/** Explicit owner-maintained Supabase Auth UUID allowlist. Default: no admins. */
-export function isAllowedAdmin(userId: string | null | undefined, configured = process.env.CREDISAFE_ADMIN_USER_IDS): boolean {
-  if (!userId || !configured) return false;
-  return configured.split(",").map(v => v.trim()).filter(Boolean).includes(userId);
-}
+import { isAllowedAdmin } from "@/lib/server/adminAuth";
 
 export async function requireAdmin() {
   const auth = await requireUser();
   if (auth.error || !auth.user || !auth.supabase) {
     return { ok: false as const, status: auth.status, message: "Sign in to continue" };
   }
-  if (!isAllowedAdmin(auth.user.id)) {
+  if (!isAllowedAdmin(auth.user.id, process.env.CREDISAFE_ADMIN_USER_IDS)) {
     return { ok: false as const, status: 403 as const, message: "Admin access is restricted" };
   }
   // Team access requires Supabase MFA by default; never rely only on UI hiding.
