@@ -24,7 +24,7 @@ export function TeamMfaSetup() {
         return;
       }
       const factors = await api.auth.mfa.listFactors();
-      const existing = factors.data?.totp?.find(f => f.status === "verified");
+      const existing = factors.data?.totp?.find((f: { status: string; id: string }) => f.status === "verified");
       if (existing) {
         setFactorId(existing.id);
         setMessage("Enter a current code from your authenticator app.");
