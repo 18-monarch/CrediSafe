@@ -13,6 +13,7 @@ export default function DashboardPage() {
   if (!ready) return <LoadingState />;
 
   const latest = snapshot.trips[0];
+  const webGpsPreview = latest?.xpBreakdown?.version === "WEB_GPS_PREVIEW_V3";
   const latestAnalysis = snapshot.videoAnalyses[0];
   const levelState = levelProgress(snapshot.profile.totalXp);
   const rank = snapshot.leaderboard.find((entry) => entry.isCurrentUser)?.rank ?? snapshot.leaderboard.length;
@@ -27,7 +28,7 @@ export default function DashboardPage() {
       />
 
       <section className="mvp-metrics-grid">
-        <MetricCard label="Safety score" value={latest ? `${latest.safetyScore}/100` : "—"} detail={latest ? "Latest completed trip" : "Complete your first trip"} icon={<ShieldCheck size={22} />} tone="green" />
+        <MetricCard label="Safety score" value={webGpsPreview ? "Unverified" : latest ? `${latest.safetyScore}/100` : "—"} detail={webGpsPreview ? "Browser GPS cannot verify driving safety" : latest ? "Latest completed trip" : "Complete your first trip"} icon={<ShieldCheck size={22} />} tone="green" />
         <MetricCard label="Lifetime XP" value={snapshot.profile.totalXp.toLocaleString("en-IN")} detail={`${snapshot.profile.level} driver`} icon={<Zap size={22} />} tone="blue" />
         <MetricCard label="Reward points" value={snapshot.profile.rewardPoints.toLocaleString("en-IN")} detail="Available to redeem" icon={<Award size={22} />} tone="gold" />
         <MetricCard label="City rank" value={`#${rank}`} detail={`${snapshot.profile.currentStreak}-trip safe streak`} icon={<Trophy size={22} />} />
@@ -46,8 +47,8 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mvp-score-hero">
-            <ScoreRing score={latest?.safetyScore ?? 97} size={148} />
-            <strong>{latest ? `+${latest.xpEarned} XP` : "Ready to drive"}</strong>
+            {webGpsPreview ? <div className="mvp-muted">GPS preview only<br/>No verified safety score</div> : <ScoreRing score={latest?.safetyScore ?? 97} size={148} />}
+            <strong>{webGpsPreview ? "Not eligible for XP" : latest ? `+${latest.xpEarned} XP` : "Ready to drive"}</strong>
             <span>{latest ? "Awarded on latest trip" : "Run your first trip"}</span>
           </div>
         </article>
