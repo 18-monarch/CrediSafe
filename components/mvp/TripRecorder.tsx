@@ -24,6 +24,7 @@ export function TripRecorder() {
   const { snapshot, busy, simulateTrip, completeGpsTrip } = useMvp();
   const [mode, setMode] = useState<"simulation" | "gps">("simulation");
   const [recording, setRecording] = useState(false);
+  const [interrupted, setInterrupted] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [distanceKm, setDistanceKm] = useState(0);
   const [speedKmh, setSpeedKmh] = useState(0);
@@ -42,6 +43,26 @@ export function TripRecorder() {
   const gpsSupported = typeof navigator === "undefined" ? true : "geolocation" in navigator;
 
   useEffect(() => () => cleanupGps(), []);
+  // Safari suspends browser geolocation when backgrounded or locked.
+  // Invalidate the partial journey instead of silently counting idle time.
+  useEffect(() => {
+    const stopOnBackground = () => {
+      if (document.visibilityState !== "visible" && watchIdRef.current !== null) {
+        cleanupGps();
+        pointsRef.current = [];
+        startedAtRef.current = null;
+        setInterrupted(true);
+        setRecording(false);
+        setError("Web GPS was interrupted when this page became hidden. For reliable records, keep Safari visible and start a new journey.");
+      }
+    };
+    document.addEventListener("visibilitychange", stopOnBackground);
+    window.addEventListener("pagehide", stopOnBackground);
+    return () => {
+      document.removeEventListener("visibilitychange", stopOnBackground);
+      window.removeEventListener("pagehide", stopOnBackground);
+    };
+  }, []);
   useEffect(() => () => demoTimersRef.current.forEach(window.clearTimeout), []);
 
   const qualityLabel = useMemo(() => {
@@ -71,6 +92,11 @@ export function TripRecorder() {
   function startGps() {
     setError(null);
     setResult(null);
+    setInterrupted(false);
+    if (document.visibilityState !== "visible") {
+      setError("Bring CrediSafe to the foreground before starting a browser journey.");
+      return;
+    }
     if (!gpsSupported) {
       setError("This browser does not provide the Geolocation API.");
       return;
@@ -191,7 +217,8 @@ export function TripRecorder() {
           <div className="mvp-gps-panel">
             <span className="mvp-panel-kicker"><Radio size={16} /> Live trip recorder</span>
             <h2>{recording ? "Trip recording is active." : "Turn your phone into the first CrediSafe sensor."}</h2>
-            <p>{recording ? "Keep this page open. CrediSafe is collecting only trip coordinates, timestamps and GPS quality until you stop." : "Allow location access, move with the device and stop the trip when the journey ends. HTTPS is required outside localhost."}</p>
+            <p>{recording ? "Keep Safari visible and the screen unlocked. Browser GPS can pause when backgrounded; Android is required for full telematics." : "Browser GPS is foreground-only and does not use Android Rules Engine v2. Your web journey is a limited preview."}</p>
+            {interrupted && <div className="mvp-inline-error" role="status"><AlertTriangle size={18}/><span>The interrupted partial recording was discarded. Start a new trip.</span></div>}
 
             <div className="mvp-live-metrics">
               <div><Gauge /><strong>{Math.round(speedKmh)}</strong><span>km/h</span></div>
