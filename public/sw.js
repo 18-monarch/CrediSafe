@@ -37,7 +37,7 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   // No authenticated pages, admin pages, user trips, auth callbacks or APIs
   // may enter the shared offline cache. They can contain personal records.
-  const isPrivatePath = ["/api", "/app", "/admin", "/auth", "/login", "/signup", "/profile"]
+  const isPrivatePath = ["/api", "/app", "/admin", "/auth", "/login", "/signup", "/profile", "/team"]
     .some(prefix => url.pathname === prefix || url.pathname.startsWith(prefix + "/"));
   if (isPrivatePath || url.pathname.startsWith("/_next/webpack-hmr")) return;
 
