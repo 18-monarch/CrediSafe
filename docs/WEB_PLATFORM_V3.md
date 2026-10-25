@@ -49,9 +49,14 @@ There are no admin write endpoints, role-editing screens or raw telemetry export
    Never prefix this variable with `NEXT_PUBLIC_`.
 6. Review PRs and CI before merging. Deploy **Render bridge first**, then
    deploy Vercel website. Check `/admin` using a test admin and a non-admin.
-7. If an integration is not configured, the dashboard shows an explicit
+7. In the Supabase SQL Editor, review and apply
+   `supabase/migrations/202610260001_webgps_preview_security.sql` before
+   allowing any browser-GPS participants to collect redeemable benefits.
+   This deliberately disables spendable rewards from the unverified legacy
+   web RPC; Android/Neon has its own server-verified XP ledger.
+8. If an integration is not configured, the dashboard shows an explicit
    unavailable status. **No demo metrics are substituted.**
-8. If a secret is exposed, rotate both providers together and verify logs.
+9. If a secret is exposed, rotate both providers together and verify logs.
    Add audit logging, alerts, authorization reviews and scheduled key rotation
    before using this dashboard for a large real-world study.
 
@@ -73,10 +78,11 @@ There are no admin write endpoints, role-editing screens or raw telemetry export
 - Admin: authenticated website proxy to **read-only Android aggregate data**.
 - **Web vs Android accounts are still distinct.** A unified user database,
   rewards ledger and across-device history are future engineering work.
-- Web's existing Supabase `record_trip_result` RPC accepts numerical input
-  from authenticated callers. Do not represent old web rewards as verified
-  driving achievement. Harden this RPC at the database boundary before
-  allowing redeemable benefits or cross-platform XP.
+- Web's legacy Supabase `record_trip_result` RPC accepts numerical input
+  from authenticated callers. The committed database migration forces
+  browser-GPS awards and all spendable web points to zero, but must be
+  applied manually to Supabase. Until applied, **do not admit reward-seeking
+  web users** or represent historical web rewards as verified achievements.
 
 ### Privacy and product limitations
 - Web GPS is only reliable while Safari is foregrounded; installing as a
