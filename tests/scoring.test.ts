@@ -36,7 +36,7 @@ test("haversine distance is geographically reasonable", () => {
   assert.ok(distance > 110 && distance < 112);
 });
 
-test("GPS scoring detects a major overspeed event", () => {
+test("web GPS does not invent a posted 60 km/h limit or award confirmed XP", () => {
   const startedAt = new Date("2026-06-21T10:00:00.000Z");
   const points = [
     { latitude: 22.3000, longitude: 73.2000, timestamp: startedAt.getTime(), accuracy: 8, speed: 0, heading: 0 },
@@ -49,8 +49,10 @@ test("GPS scoring detects a major overspeed event", () => {
     endedAt: new Date(startedAt.getTime() + 20_000).toISOString(),
     points,
   });
-  assert.equal(trip.majorOverspeedEvents, 1);
-  assert.ok(trip.safetyScore <= 91);
+  assert.equal(trip.majorOverspeedEvents, 0);
+  assert.equal(trip.overspeedEvents, 0);
+  assert.equal(trip.xpBreakdown.version, "WEB_GPS_PREVIEW_V3");
+  assert.equal(trip.rewardPointsEarned, 0);
   assert.ok(trip.maximumSpeedKmh >= 86);
   assert.equal(trip.xpEarned, 0, "A 20-second test trip is too short for XP");
 });
