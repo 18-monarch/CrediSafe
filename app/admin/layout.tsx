@@ -15,6 +15,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <h1>Restricted team area</h1>
         <p>{admin.message}. This page never shows driver records without verified team access.</p>
         <p>Team members need explicit account approval and MFA before monitoring is enabled.</p>
+        <Link href="/team/security">Set up or verify team MFA</Link>
         <Link href="/">Back to CrediSafe</Link>
       </main>
     );
