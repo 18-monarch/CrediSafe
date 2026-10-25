@@ -6,6 +6,7 @@ import { FormEvent, useState } from "react";
 import { ArrowRight, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { safeReturnPath } from "@/lib/mvp/safeReturnPath";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
@@ -31,7 +32,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.push(params.get("next") || "/app/dashboard");
+        router.push(safeReturnPath(params.get("next")));
         router.refresh();
       } else {
         const { data, error } = await supabase.auth.signUp({

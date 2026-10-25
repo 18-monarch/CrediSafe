@@ -10,7 +10,7 @@ import type {
 } from "./types";
 
 const EARTH_RADIUS_KM = 6371;
-const DEFAULT_SPEED_LIMIT_KMH = 60;
+// Browser GPS has no verified road limit; never invent a universal legal limit.
 
 export const XP_ENGINE_VERSION = "2.0";
 export const XP_PER_TRIP_CAP = 220;
@@ -302,28 +302,9 @@ export function calculateGpsTrip(input: TripResultInput): Omit<Trip, "id"> {
     weightedSpeed += speedKmh * seconds;
     weightedSeconds += seconds;
 
-    const atSeconds = Math.round((current.timestamp - start.getTime()) / 1000);
-    if (speedKmh >= DEFAULT_SPEED_LIMIT_KMH + 20 && atSeconds - lastMajorAt >= 12) {
-      majorEvents += 1;
-      lastMajorAt = atSeconds;
-      events.push({
-        type: "major_overspeed",
-        severity: "high",
-        penalty: 9,
-        atSeconds,
-        detail: `${Math.round(speedKmh)} km/h in a 60 km/h configured zone`,
-      });
-    } else if (speedKmh >= DEFAULT_SPEED_LIMIT_KMH + 5 && atSeconds - lastMinorAt >= 12) {
-      minorEvents += 1;
-      lastMinorAt = atSeconds;
-      events.push({
-        type: "minor_overspeed",
-        severity: "medium",
-        penalty: 4,
-        atSeconds,
-        detail: `${Math.round(speedKmh)} km/h in a 60 km/h configured zone`,
-      });
-    }
+    // No trusted road limit was provided by a verified map-matching service.
+    // We record GPS motion but do not issue speeding penalties from an
+    // arbitrary fixed speed limit or infer safe driving from no events.
   }
 
   const validPointRatio = points.length === 0 ? 0 : points.length / Math.max(points.length, input.points?.length ?? points.length);
@@ -332,33 +313,33 @@ export function calculateGpsTrip(input: TripResultInput): Omit<Trip, "id"> {
     : 100;
   const gpsQuality = clamp(Math.round((validPointRatio * 70 + clamp(1 - averageAccuracy / 100, 0, 1) * 30) * 100) / 100, 0, 1);
 
-  let safetyScore = 100 - minorEvents * 4 - majorEvents * 9;
-  if (gpsQuality < 0.45) {
-    safetyScore -= 5;
-    events.push({
-      type: "gps_quality",
-      severity: "low",
-      penalty: 5,
-      atSeconds: durationSeconds,
-      detail: "Low GPS confidence reduced the score slightly",
-    });
-  }
-  if (distanceKm < 0.15) safetyScore = Math.min(safetyScore, 85);
-  safetyScore = clamp(Math.round(safetyScore), 0, 100);
+  // The numeric field is kept for legacy schema compatibility only.
+  // It is NOT a confirmed driver-behaviour score in browser GPS mode.
+  const safetyScore = 100;
 
   const averageSpeedKmh = weightedSeconds > 0 ? weightedSpeed / weightedSeconds : durationSeconds > 0 ? distanceKm / (durationSeconds / 3600) : 0;
   const roundedDistance = round(distanceKm, 2);
-  const reward = calculateXpBreakdown({
-    mode: "gps",
-    safetyScore,
-    distanceKm: roundedDistance,
-    durationSeconds,
-    gpsQuality: round(gpsQuality, 2),
-    overspeedEvents: minorEvents,
-    majorOverspeedEvents: majorEvents,
-    streakDays: input.streakDays,
-    firstTripOfDay: input.firstTripOfDay,
-  });
+  // Web GPS cannot corroborate phone-sensor events or trusted road limits.
+  // Keep recorded trips for pilot review but do not mint authoritative XP.
+  const reward = {
+    xpEarned: 0,
+    rewardPointsEarned: 0,
+    xpBreakdown: {
+      version: "WEB_GPS_PREVIEW_V3",
+      eligible: false,
+      rewardEligible: false,
+      subtotal: 0,
+      cap: 0,
+      total: 0,
+      items: [{
+        code: "eligibility" as const,
+        label: "Web GPS preview",
+        points: 0,
+        detail: "Full Android telematics verification is not available in a browser.",
+      }],
+      note: "GPS-only browser journey saved for review. No safety score or XP is confirmed.",
+    },
+  };
 
   return {
     mode: "gps",

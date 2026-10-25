@@ -1,8 +1,9 @@
-const CACHE_NAME = "credisafe-pwa-v1";
+const CACHE_NAME = "credisafe-pwa-v3-public";
 const APP_SHELL = [
   "/",
   "/offline",
-  "/app/dashboard",
+  "/ios",
+  "/download/android",
   "/brand/icon-192.png",
   "/brand/icon-512.png",
   "/brand/icon-maskable-192.png",
@@ -34,14 +35,18 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/webpack-hmr")) return;
+  // No authenticated pages, admin pages, user trips, auth callbacks or APIs
+  // may enter the shared offline cache. They can contain personal records.
+  const isPrivatePath = ["/api", "/app", "/admin", "/auth", "/login", "/signup", "/profile", "/team"]
+    .some(prefix => url.pathname === prefix || url.pathname.startsWith(prefix + "/"));
+  if (isPrivatePath || url.pathname.startsWith("/_next/webpack-hmr")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => undefined);
+          if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => undefined);
           return response;
         })
         .catch(async () => {
