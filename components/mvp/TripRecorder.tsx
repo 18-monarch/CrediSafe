@@ -253,15 +253,14 @@ export function TripRecorder() {
         </div>
 
         <div className="mvp-panel mvp-scoring-explainer">
-          <span className="mvp-panel-kicker">Transparent XP Engine 2.0</span>
-          <h3>How XP is earned</h3>
-          <div><span>Eligible trip completion</span><strong>+25</strong></div>
-          <div><span>Safety-score reward</span><strong>up to +110</strong></div>
-          <div><span>Validated distance</span><strong>2 XP/km</strong></div>
-          <div><span>Clean-trip bonus</span><strong>+25</strong></div>
-          <div><span>Trusted GPS data</span><strong>up to +15</strong></div>
-          <div><span>Daily streak bonus</span><strong>up to +25</strong></div>
-          <small>One trip is capped at 220 XP. Real GPS trips convert 50% of awarded XP into spendable reward points; simulations do not.</small>
+          <span className="mvp-panel-kicker">Browser GPS · Limited pilot</span>
+          <h3>What your web journey can record</h3>
+          <div><span>Distance and journey duration</span><strong>Recorded</strong></div>
+          <div><span>GPS speed and accuracy</span><strong>Recorded</strong></div>
+          <div><span>Harsh-motion evidence</span><strong>Android only</strong></div>
+          <div><span>Posted road speed limits</span><strong>Not verified in web</strong></div>
+          <div><span>Web-GPS XP and reward points</span><strong>Not issued</strong></div>
+          <small>This browser experience is a GPS journey preview. Android Beta 4.1 offers the fuller confidence-aware telematics pilot.</small>
         </div>
       </aside>
 
@@ -271,9 +270,11 @@ export function TripRecorder() {
             <motion.div className="mvp-result-dialog" initial={{ opacity: 0, scale: .94, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .96 }}>
               <button className="mvp-result-close" onClick={() => { setResult(null); setDemoStep(-1); }}>×</button>
               <span className="mvp-panel-kicker"><CheckCircle2 size={16} /> Trip complete</span>
-              <ScoreRing score={result.safetyScore} size={142} />
-              <h2>Safe journey recorded.</h2>
-              <p>Your score, XP and reward-point calculation are shown below—nothing is hidden.</p>
+              {result.xpBreakdown.version === "WEB_GPS_PREVIEW_V3"
+                ? <div className="mvp-inline-error"><AlertTriangle size={18} /><span>GPS-only preview · Safety not verified</span></div>
+                : <ScoreRing score={result.safetyScore} size={142} />}
+              <h2>{result.mode === "gps" ? "Browser journey saved." : "Demo journey completed."}</h2>
+              <p>{result.mode === "gps" ? "Your route metrics were recorded, but browser GPS cannot verify driving behaviour or award confirmed XP." : "The simulation illustrates how progress and rewards could work."}</p>
               <div className="mvp-result-stats">
                 <div><strong>+{result.xpEarned}</strong><span>Lifetime XP</span></div>
                 <div><strong>+{result.rewardPointsEarned}</strong><span>Reward points</span></div>
