@@ -1,0 +1,29 @@
+name: CrediSafe Web CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: TypeScript correctness
+        run: npm run typecheck
+      - name: Next.js production build
+        run: npm run build
+      - name: Dependency security audit
+        run: npm audit --omit=dev
