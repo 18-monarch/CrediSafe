@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Download CrediSafe Android Beta 4",
-  description: "Download the official signed CrediSafe v2.7.0-beta.4 Android APK directly.",
+  title: "Download CrediSafe Android Beta 4.1",
+  description: "Download the official signed CrediSafe v2.7.0-beta.4.1 Android APK directly.",
 };
 
 const APK_URL =
-  "https://github.com/18-monarch/CrediSafeAndroid/releases/download/v2.7.0-beta.4/CrediSafe-2.7.0-beta.4.apk";
+  "https://github.com/18-monarch/CrediSafeAndroid/releases/download/v2.7.0-beta.4.1/CrediSafe-2.7.0-beta.4.1.apk";
 const RELEASE_URL =
-  "https://github.com/18-monarch/CrediSafeAndroid/releases/tag/v2.7.0-beta.4";
+  "https://github.com/18-monarch/CrediSafeAndroid/releases/tag/v2.7.0-beta.4.1";
 const VERIFIED_RUN =
   "https://github.com/18-monarch/CrediSafeAndroid/actions";
 
@@ -24,31 +24,32 @@ export default function AndroidDownloadPage() {
           CrediSafe Android · Rules Engine v2 · Testing beta
         </div>
         <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">
-          Drive smarter with <span className="text-emerald-300">Beta 4.</span>
+          Drive smarter with <span className="text-emerald-300">Beta 4.1.</span>
         </h1>
         <p className="mt-5 max-w-2xl text-lg leading-relaxed text-slate-300">
-          CrediSafe v2.7.0-beta.4 adds confidence-aware motion detection, sustained trusted-road
-          speeding checks, and evidence-backed offline-first scoring.
+          CrediSafe v2.7.0-beta.4.1 automatically matches your GPS to mapped roads,
+          checks available tagged speed limits as the road changes, and uses
+          signed map evidence for trusted speeding events.
         </p>
 
         <section className="mt-10 rounded-3xl border border-white/10 bg-white/[0.05] p-6 sm:p-8" aria-labelledby="download-heading">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 id="download-heading" className="text-xl font-semibold">Android app · v2.7.0-beta.4</h2>
+            <h2 id="download-heading" className="text-xl font-semibold">Android app · v2.7.0-beta.4.1</h2>
             <span className="rounded-full border border-emerald-400/30 px-3 py-1 text-xs text-emerald-200">
-              Signed APK · versionCode 28
+              Signed APK · versionCode 29
             </span>
           </div>
           <p className="mt-3 text-sm leading-6 text-slate-300">
             Download the official signed Android APK directly. No ZIP, GitHub Actions login or extraction is required.
-            This is an experimental pilot build: driving-event accuracy has not
-            been validated against independently labelled real journeys.
+            Speed limits come from community map data and can be missing or wrong.
+            This is an experimental pilot, not certified legal-speed enforcement.
           </p>
           <a
             href={APK_URL}
             className="mt-7 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-emerald-400 px-6 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-300 sm:w-auto"
-            aria-label="Download CrediSafe v2.7.0-beta.4 signed APK"
+            aria-label="Download CrediSafe v2.7.0-beta.4.1 signed APK"
           >
-            Download Beta 4 APK
+            Download Beta 4.1 APK
           </a>
           <p className="mt-5 text-xs text-slate-400">
             Hosted on the official CrediSafe GitHub Releases page ·
@@ -59,9 +60,9 @@ export default function AndroidDownloadPage() {
           <p className="mt-4 text-xs text-slate-400">
             Need the previous version?{" "}
             <a className="underline underline-offset-4 hover:text-white"
-               href="https://github.com/18-monarch/CrediSafeAndroid/releases/tag/v2.7.0-beta.3"
+               href="https://github.com/18-monarch/CrediSafeAndroid/releases/tag/v2.7.0-beta.4"
                target="_blank" rel="noopener noreferrer">
-              View Beta 3 release
+              View Beta 4 release
             </a>
             . Android generally blocks downgrading an installed app without data loss.
           </p>
@@ -69,10 +70,10 @@ export default function AndroidDownloadPage() {
 
         <section className="mt-10 grid gap-5 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/10 p-6">
-            <h2 className="text-lg font-semibold">Already using Beta 3?</h2>
+            <h2 className="text-lg font-semibold">Already using Beta 4?</h2>
             <p className="mt-3 text-sm leading-6 text-slate-300">
               Install the new APK over your existing app. Do not uninstall
-              Beta 3 or clear its storage; that could remove local journeys.
+              Beta 4 or clear its storage; that could remove local journeys.
             </p>
           </div>
           <div className="rounded-2xl border border-white/10 p-6">
@@ -89,7 +90,7 @@ export default function AndroidDownloadPage() {
           <a href={VERIFIED_RUN} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-white">
             GitHub Actions build history
           </a>
-          . Beta 4 is an early test build with unvalidated driving-risk accuracy.
+          . Beta 4.1 is an early test build with unvalidated driving-risk accuracy.
           If the new version fails to open or sync, please contact the project team;
           do not uninstall or downgrade over the existing app without preserving data.
         </p>
