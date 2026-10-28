@@ -27,8 +27,7 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isProtectedApp = path === "/app" || path.startsWith("/app/");
   const isProtectedAdmin = path === "/admin" || path.startsWith("/admin/");
-  const isAuthPage = path === "/login" || path === "/signup" ||
-    path === "/forgot-password" || path === "/reset-password";
+  const isAuthPage = path === "/login" || path === "/signup" || path === "/forgot-password";
 
   if (!isSupabaseConfigured()) {
     // Demo/local fallback must never silently disable auth in production.
