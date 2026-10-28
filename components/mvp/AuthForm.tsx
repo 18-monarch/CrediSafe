@@ -102,6 +102,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         }
       }
     } catch (error) {
+      const authErrorText = error instanceof Error ? error.message.toLowerCase() : "";
+      if (authErrorText.includes("email not confirmed") || authErrorText.includes("email_not_confirmed")) {
+        setAwaitingConfirmation(true);
+      }
       setMessage(getFriendlyAuthError(error));
     } finally {
       setBusy(false);
