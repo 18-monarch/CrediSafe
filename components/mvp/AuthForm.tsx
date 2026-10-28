@@ -32,15 +32,18 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   // Local demo mode is convenient for development, but is never an auth bypass in production.
   const allowLocalDemo = process.env.NODE_ENV !== "production";
 
+  const redirectError = params.get("error");
+  const redirectSuccess = params.get("success");
+
   useEffect(() => {
-    const redirectMessage = getAuthRedirectMessage(params.get("error")) ??
-      (params.get("success") ? getAuthRedirectMessage(params.get("success")) : null);
+    const redirectMessage = getAuthRedirectMessage(redirectError) ??
+      (redirectSuccess ? getAuthRedirectMessage(redirectSuccess) : null);
     if (redirectMessage) {
       setMessage(redirectMessage);
     } else if (process.env.NODE_ENV === "production" && !configured) {
       setMessage(getSupabaseConfigIssue() ?? "Secure sign-in is temporarily unavailable.");
     }
-  }, [params, configured]);
+  }, [redirectError, redirectSuccess, configured]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
