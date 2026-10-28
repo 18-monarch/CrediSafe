@@ -25,9 +25,10 @@ function redirectTo(origin: string, path: string, error?: string) {
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const next = safeReturnPath(url.searchParams.get("next"), "/app/dashboard");
   const tokenHash = url.searchParams.get("token_hash");
   const typeValue = url.searchParams.get("type");
+  const defaultNext = typeValue === "recovery" ? "/reset-password" : "/app/dashboard";
+  const next = safeReturnPath(url.searchParams.get("next"), defaultNext);
 
   if (!tokenHash || !typeValue || !ALLOWED_TYPES.has(typeValue as EmailOtpType)) {
     return redirectTo(url.origin, "/app/dashboard", "invalid");
