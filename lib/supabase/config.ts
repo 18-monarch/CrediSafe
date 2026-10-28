@@ -36,7 +36,7 @@ export function validateSupabaseConfig(
   if (parsed.protocol !== "https:" && !(local && !production)) {
     return "The Supabase project URL must use HTTPS.";
   }
-  if (parsed.username || parsed.password || parsed.search || parsed.hash) {
+  if (parsed.username || parsed.password || parsed.search || parsed.hash || (parsed.pathname && parsed.pathname !== "/")) {
     return "The Supabase project URL must be the base project URL, without credentials, query parameters or fragments.";
   }
   if (isServerOnlyKey(cleanKey)) {
