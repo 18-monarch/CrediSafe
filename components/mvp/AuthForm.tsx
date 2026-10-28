@@ -192,7 +192,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
               <div><Link href="/forgot-password">Forgot password?</Link></div>
               <div className="auth-switch-secondary">New to CrediSafe? <Link href="/signup">Create an account</Link></div>
             </>
-          ) : <>Already registered? <Link href="/login">Sign in</Link></>}
+          ) : <>
+            <div>Already registered? <Link href="/login">Sign in</Link></div>
+            <div className="auth-switch-secondary">Having trouble accessing an account? <Link href="/forgot-password">Recover password</Link></div>
+          </>}
         </div>
         <small>Never share your password or email confirmation link. External FASTag and vehicle integrations remain unavailable until officially connected.</small>
       </div>
