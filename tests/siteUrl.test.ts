@@ -13,11 +13,11 @@ test("auth callbacks use the canonical configured origin, not a preview origin",
   }
 });
 
-test("invalid configured origins fall back only to a valid supplied origin", () => {
+test("invalid configured origins fail closed instead of using a preview domain", () => {
   const original = process.env.NEXT_PUBLIC_SITE_URL;
   process.env.NEXT_PUBLIC_SITE_URL = "javascript:alert(1)";
   try {
-    assert.equal(getAuthSiteOrigin("https://credi-safe.vercel.app/path"), "https://credi-safe.vercel.app");
+    assert.equal(getAuthSiteOrigin("https://preview-123.vercel.app"), "");
   } finally {
     if (original === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
     else process.env.NEXT_PUBLIC_SITE_URL = original;
