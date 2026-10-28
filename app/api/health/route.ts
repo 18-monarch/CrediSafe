@@ -14,7 +14,7 @@ export function GET(request: Request) {
       service: "credisafe",
       version: "3.2.0",
       authConfigured,
-      emailRedirectConfigured: Boolean(canonicalOrigin),
+      emailRedirectConfigured: Boolean(process.env.NEXT_PUBLIC_SITE_URL?.trim() && canonicalOrigin),
       visionConfigured: Boolean(getVisionServiceUrl()),
       timestamp: new Date().toISOString(),
     },
