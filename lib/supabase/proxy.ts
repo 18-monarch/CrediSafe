@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getSupabaseConfigIssue, isSupabaseConfigured, supabasePublishableKey, supabaseUrl } from "./config";
+import { isSupabaseConfigured, supabasePublishableKey, supabaseUrl } from "./config";
 
 function redirectPreservingCookies(destination: URL, sessionResponse: NextResponse) {
   const response = NextResponse.redirect(destination);
@@ -14,26 +14,28 @@ function redirectPreservingCookies(destination: URL, sessionResponse: NextRespon
   return response;
 }
 
-function loginRedirect(request: NextRequest, error?: string) {
+function loginUrl(request: NextRequest, error?: string) {
   const url = request.nextUrl.clone();
   url.pathname = "/login";
   url.search = "";
   url.searchParams.set("next", request.nextUrl.pathname);
   if (error) url.searchParams.set("error", error);
-  const response = NextResponse.redirect(url);
-  response.headers.set("Cache-Control", "private, no-store, max-age=0");
-  return response;
+  return url;
 }
 
 export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isProtectedApp = path === "/app" || path.startsWith("/app/");
   const isProtectedAdmin = path === "/admin" || path.startsWith("/admin/");
+  const isAuthPage = path === "/login" || path === "/signup" ||
+    path === "/forgot-password" || path === "/reset-password";
 
   if (!isSupabaseConfigured()) {
     // Demo/local fallback must never silently disable auth in production.
     if (process.env.NODE_ENV === "production" && (isProtectedApp || isProtectedAdmin)) {
-      return loginRedirect(request, "auth_unavailable");
+      const response = NextResponse.redirect(loginUrl(request, "auth_unavailable"));
+      response.headers.set("Cache-Control", "private, no-store, max-age=0");
+      return response;
     }
     return NextResponse.next({ request });
   }
@@ -51,35 +53,28 @@ export async function updateSession(request: NextRequest) {
         if (headers) {
           for (const [name, value] of Object.entries(headers)) response.headers.set(name, value);
         }
+        response.headers.set("Cache-Control", "private, no-store, max-age=0");
       },
     },
   });
 
-  let user: Record<string, unknown> | undefined;
+  let hasValidSession = false;
   try {
     const { data, error } = await supabase.auth.getClaims();
-    if (!error) user = data?.claims;
+    hasValidSession = !error && Boolean(data?.claims?.sub);
   } catch {
     // Fail closed for protected routes if session verification cannot complete.
   }
 
-  const isAuthPage = path === "/login" || path === "/signup" ||
-    path === "/forgot-password" || path === "/reset-password";
-
-  if (!user && (isProtectedApp || isProtectedAdmin)) {
-    return redirectPreservingCookies(new URL(loginRedirect(request).headers.get("location")!), response);
+  if (!hasValidSession && (isProtectedApp || isProtectedAdmin)) {
+    return redirectPreservingCookies(loginUrl(request), response);
   }
 
-  if (user && isAuthPage) {
+  if (hasValidSession && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/app/dashboard";
     url.search = "";
     return redirectPreservingCookies(url, response);
-  }
-
-  // Misconfigured auth in production must not create anonymous app access.
-  if (getSupabaseConfigIssue() && process.env.NODE_ENV === "production") {
-    return isProtectedApp || isProtectedAdmin ? loginRedirect(request, "auth_unavailable") : response;
   }
 
   return response;
