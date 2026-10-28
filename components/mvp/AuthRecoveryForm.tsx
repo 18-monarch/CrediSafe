@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseConfigIssue, isSupabaseConfigured } from "@/lib/supabase/config";
 import { getFriendlyAuthError } from "@/lib/supabase/authMessages";
@@ -101,7 +102,7 @@ export function ResetPasswordForm() {
     }
 
     let active = true;
-    const { data: listener } = client.auth.onAuthStateChange((event, session) => {
+    const { data: listener } = client.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (!active) return;
       if (event === "PASSWORD_RECOVERY" && session) {
         setReady(true);
@@ -112,7 +113,8 @@ export function ResetPasswordForm() {
         setRecoveryError(false);
       }
     });
-    void client.auth.getSession().then(({ data, error }) => {
+    void client.auth.getSession().then((result: { data: { session: Session | null }; error: unknown }) => {
+      const { data, error } = result;
       if (!active) return;
       setReady(Boolean(data.session));
       if (error) {
@@ -123,7 +125,7 @@ export function ResetPasswordForm() {
         setRecoveryError(true);
       }
       setChecking(false);
-    }).catch(error => {
+    }).catch((error: unknown) => {
       if (!active) return;
       setMessage(getFriendlyAuthError(error));
       setRecoveryError(true);
