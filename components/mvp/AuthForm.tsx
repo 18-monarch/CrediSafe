@@ -35,8 +35,12 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   useEffect(() => {
     const redirectMessage = getAuthRedirectMessage(params.get("error")) ??
       (params.get("success") ? getAuthRedirectMessage(params.get("success")) : null);
-    if (redirectMessage) setMessage(redirectMessage);
-  }, [params]);
+    if (redirectMessage) {
+      setMessage(redirectMessage);
+    } else if (process.env.NODE_ENV === "production" && !configured) {
+      setMessage(getSupabaseConfigIssue() ?? "Secure sign-in is temporarily unavailable.");
+    }
+  }, [params, configured]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
