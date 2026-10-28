@@ -2,11 +2,21 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { getSupabaseConfigIssue, isSupabaseConfigured } from "@/lib/supabase/config";
+import { getAuthRedirectMessage, getFriendlyAuthError } from "@/lib/supabase/authMessages";
+import { getAuthSiteOrigin } from "@/lib/supabase/siteUrl";
 import { safeReturnPath } from "@/lib/mvp/safeReturnPath";
+
+function authCallbackUrl(next: string) {
+  const origin = getAuthSiteOrigin(typeof window === "undefined" ? undefined : window.location.origin);
+  if (!origin) throw new Error("Secure email links cannot be created because the canonical website URL is not configured.");
+  const url = new URL("/auth/callback", origin);
+  url.searchParams.set("next", safeReturnPath(next));
+  return url.toString();
+}
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
@@ -15,69 +25,165 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const configured = isSupabaseConfigured();
+  // Local demo mode is convenient for development, but is never an auth bypass in production.
+  const allowLocalDemo = process.env.NODE_ENV !== "production";
+
+  useEffect(() => {
+    const redirectMessage = getAuthRedirectMessage(params.get("error")) ??
+      (params.get("success") ? getAuthRedirectMessage(params.get("success")) : null);
+    if (redirectMessage) setMessage(redirectMessage);
+  }, [params]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setMessage(null);
+    setAwaitingConfirmation(false);
+
     if (!configured) {
-      router.push("/app/dashboard");
+      if (allowLocalDemo) {
+        router.replace("/app/dashboard");
+        return;
+      }
+      setMessage(getSupabaseConfigIssue() ?? "Secure sign-in is temporarily unavailable.");
       return;
     }
+
     const supabase = createClient();
-    if (!supabase) return;
+    if (!supabase) {
+      setMessage("Secure sign-in is temporarily unavailable. Please try again later.");
+      return;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedName = fullName.trim();
     setBusy(true);
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
         if (error) throw error;
-        router.push(safeReturnPath(params.get("next")));
+        router.replace(safeReturnPath(params.get("next")));
         router.refresh();
       } else {
+        if (normalizedName.length < 2) {
+          setMessage("Enter your name so we can create your driver profile.");
+          return;
+        }
+
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: normalizedEmail,
           password,
           options: {
-            data: { full_name: fullName },
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=/app/dashboard`,
+            data: { full_name: normalizedName },
+            emailRedirectTo: authCallbackUrl("/app/dashboard"),
           },
         });
         if (error) throw error;
+
         if (data.session) {
-          router.push("/app/dashboard");
+          router.replace("/app/dashboard");
           router.refresh();
         } else {
-          setMessage("Account created. Check your email to confirm the address, then sign in.");
+          const appearsNew = (data.user?.identities?.length ?? 1) > 0;
+          setAwaitingConfirmation(appearsNew);
+          setMessage(
+            "If this address is eligible for registration, a confirmation email is on its way. Check spam/junk too. If no email arrives, try signing in or use Forgot password.",
+          );
         }
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Authentication failed");
+      setMessage(getFriendlyAuthError(error));
     } finally {
       setBusy(false);
     }
   }
 
+  async function resendConfirmation() {
+    const supabase = createClient();
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!supabase || !normalizedEmail) {
+      setMessage("Enter the same email address used for registration.");
+      return;
+    }
+    setResending(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: normalizedEmail,
+        options: { emailRedirectTo: authCallbackUrl("/app/dashboard") },
+      });
+      if (error) throw error;
+      setMessage("If a confirmation is needed for that account, a fresh email has been sent. Use the newest link.");
+    } catch (error) {
+      setMessage(getFriendlyAuthError(error));
+    } finally {
+      setResending(false);
+    }
+  }
+
+  const unavailable = !configured && !allowLocalDemo;
+
   return (
     <div className="auth-shell">
-      <Link href="/" className="auth-brand" aria-label="CrediSafe home">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/brand/credisafe-logo.png" alt="CrediSafe" /></Link>
+      <Link href="/" className="auth-brand" aria-label="CrediSafe home">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/credisafe-logo.png" alt="CrediSafe" />
+      </Link>
       <div className="auth-card">
-        <span className="auth-eyebrow">{configured ? "Secure product access" : "Local access"}</span>
+        <span className="auth-eyebrow">{configured ? "Secure product access" : unavailable ? "Secure sign-in unavailable" : "Local development demo"}</span>
         <h1>{mode === "login" ? "Welcome back." : "Create your driver account."}</h1>
-        <p>{configured ? "Access trips, scores, XP, rewards and leaderboard progress." : "Supabase is not configured, so CrediSafe opens in persistent local mode."}</p>
+        <p>
+          {configured
+            ? "Sign in to access your trips, profile and progress."
+            : unavailable
+              ? "CrediSafe cannot securely authenticate right now. Please try again later."
+              : "Supabase is not configured, so this development build uses local demo data."}
+        </p>
 
         <form onSubmit={submit}>
-          {mode === "signup" && <label><span>Full name</span><div><UserRound size={18} /><input value={fullName} onChange={(event) => setFullName(event.target.value)} required minLength={2} /></div></label>}
-          <label><span>Email</span><div><Mail size={18} /><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required={configured} disabled={!configured} placeholder={configured ? "you@example.com" : "Not required in demo mode"} /></div></label>
-          <label><span>Password</span><div><LockKeyhole size={18} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required={configured} minLength={6} disabled={!configured} placeholder={configured ? "Minimum 6 characters" : "Not required in demo mode"} /></div></label>
-          {message && <div className="auth-message">{message}</div>}
-          <button disabled={busy}>{busy ? "Please wait…" : configured ? (mode === "login" ? "Sign in" : "Create account") : "Enter working demo"}<ArrowRight size={18} /></button>
+          {mode === "signup" && (
+            <label htmlFor="credisafe-full-name">
+              <span>Full name</span>
+              <div><UserRound size={18} /><input id="credisafe-full-name" value={fullName} onChange={(event) => setFullName(event.target.value)} autoComplete="name" required minLength={2} maxLength={100} disabled={busy || unavailable} /></div>
+            </label>
+          )}
+          <label htmlFor="credisafe-email">
+            <span>Email address</span>
+            <div><Mail size={18} /><input id="credisafe-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" autoCapitalize="none" spellCheck={false} required={configured} disabled={!configured || busy || unavailable} placeholder="you@example.com" /></div>
+          </label>
+          <label htmlFor="credisafe-password">
+            <span>Password</span>
+            <div><LockKeyhole size={18} /><input id="credisafe-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} required={configured} minLength={mode === "signup" ? 8 : undefined} maxLength={128} disabled={!configured || busy || unavailable} placeholder={mode === "signup" ? "At least 8 characters" : "Enter your password"} /></div>
+          </label>
+          {message && <div className="auth-message" role="status" aria-live="polite">{message}</div>}
+          <button disabled={busy || resending || unavailable}>
+            {busy ? "Please wait…" : unavailable ? "Sign-in unavailable" : configured ? (mode === "login" ? "Sign in" : "Create account") : "Enter local demo"}
+            <ArrowRight size={18} />
+          </button>
         </form>
 
+        {awaitingConfirmation && configured && (
+          <button className="auth-secondary-button" type="button" disabled={resending || busy} onClick={resendConfirmation}>
+            {resending ? "Requesting new email…" : "Resend confirmation email"}
+          </button>
+        )}
+
         <div className="auth-switch">
-          {mode === "login" ? <>New to CrediSafe? <Link href="/signup">Create an account</Link></> : <>Already registered? <Link href="/login">Sign in</Link></>}
+          {mode === "login" ? (
+            <>
+              <div><Link href="/forgot-password">Forgot password?</Link></div>
+              <div className="auth-switch-secondary">New to CrediSafe? <Link href="/signup">Create an account</Link></div>
+            </>
+          ) : <>Already registered? <Link href="/login">Sign in</Link></>}
         </div>
-        <small>FASTag and external vehicle integrations remain simulated until official access is available.</small>
+        <small>Never share your password or email confirmation link. External FASTag and vehicle integrations remain unavailable until officially connected.</small>
       </div>
     </div>
   );
