@@ -33,3 +33,9 @@
 @media(max-width:600px){.auth-brand{position:static; margin-bottom:24px}.auth-shell{display:flex; flex-direction:column; justify-content:center}.auth-card{padding:30px 22px;border-radius:24px}.auth-card h1{font-size:34px}}
 .auth-brand img { display:block; width:190px; max-width:100%; height:auto; object-fit:contain; }
 .auth-brand > span, .auth-brand > strong { display:none; }
+
+.auth-secondary-button { width:100%; min-height:44px; margin-top:12px; border:1px solid #d4e5dc; border-radius:13px; color:#116b39; background:#f0faf4; font:inherit; font-size:12px; font-weight:750; cursor:pointer; }
+.auth-secondary-button:disabled { opacity:.55; cursor:wait; }
+.auth-switch > div { margin:5px 0; }
+.auth-switch-secondary { margin-top:13px !important; }
+.auth-message[role="alert"] { color:#8c2626; background:#fff0f0; }
