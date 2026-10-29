@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 
+const ANDROID_APK_URL =
+  "https://github.com/18-monarch/CrediSafeAndroid/releases/download/v2.7.0-beta.4.2/CrediSafe-2.7.0-beta.4.2.apk";
+
 function Brand() {
   return (
     <a href="/" className="brand-logo-link" aria-label="CrediSafe home">
@@ -30,11 +33,11 @@ export function Header() {
         <a href="#pilot">Pilot</a>
       </nav>
       <a
-        href={isIOS ? "/ios" : "https://github.com/18-monarch/CrediSafeAndroid/releases/download/v2.7.0-beta.4.1/CrediSafe-2.7.0-beta.4.1.apk"}
+        href={isIOS ? "/ios" : ANDROID_APK_URL}
         className="primary-button compact header-app-link"
-        aria-label={isIOS ? "Open CrediSafe iPhone web companion" : "Download CrediSafe v2.7.0 Beta 4.1 signed Android APK"}
+        aria-label={isIOS ? "Open CrediSafe iPhone web companion" : "Download CrediSafe v2.7.0-beta.4.2 signed Android APK"}
       >
-        <span className="header-desktop-label">{isIOS ? "Use on iPhone" : "Download Beta 4.1 APK"}</span>
+        <span className="header-desktop-label">{isIOS ? "Use on iPhone" : "Download Beta 4.2 APK"}</span>
         <span className="header-mobile-label">{isIOS ? "Web App" : "Get APK"}</span>
       </a>
     </header>
