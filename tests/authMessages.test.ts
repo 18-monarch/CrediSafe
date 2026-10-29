@@ -1,13 +1,28 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getAuthRedirectMessage, getFriendlyAuthError } from "../lib/supabase/authMessages";
+import {
+  getAuthCallbackFailureCode,
+  getAuthRedirectMessage,
+  getFriendlyAuthError,
+} from "../lib/supabase/authMessages";
 
 test("callback errors are translated to safe, actionable messages", () => {
   assert.match(getAuthRedirectMessage("confirmation_failed") ?? "", /expired|used/i);
   assert.match(getAuthRedirectMessage("auth_unavailable") ?? "", /temporarily unavailable/i);
+  assert.match(getAuthRedirectMessage("pkce_failed") ?? "", /same browser/i);
+  assert.match(getAuthRedirectMessage("redirect_not_allowed") ?? "", /allow.*callback/i);
   assert.match(getAuthRedirectMessage("password_updated") ?? "", /updated/i);
   assert.equal(getAuthRedirectMessage(null), null);
   assert.ok(getAuthRedirectMessage("some-unexpected-provider-error"));
+});
+
+test("callback failures are classified without exposing provider descriptions", () => {
+  assert.equal(getAuthCallbackFailureCode(new Error("PKCE code verifier not found")), "pkce_failed");
+  assert.equal(getAuthCallbackFailureCode("flow_state_not_found"), "pkce_failed");
+  assert.equal(getAuthCallbackFailureCode("Redirect URL not allowed"), "redirect_not_allowed");
+  assert.equal(getAuthCallbackFailureCode(new Error("invalid API key")), "auth_unavailable");
+  assert.equal(getAuthCallbackFailureCode(new Error("one-time code has expired")), "confirmation_failed");
+  assert.equal(getAuthCallbackFailureCode(new Error("private host and user@example.com")), "confirmation_failed");
 });
 
 test("common credential failures get useful non-sensitive guidance", () => {
