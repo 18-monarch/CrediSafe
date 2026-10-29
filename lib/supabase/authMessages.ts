@@ -24,6 +24,21 @@ export function getFriendlyAuthError(error: unknown): string {
   if (/otp_expired|expired.*(token|link|otp)|invalid.*(token|otp|link)|token.*(expired|invalid)/.test(message)) {
     return "That link or code is invalid or expired. Request a fresh email and open the newest message.";
   }
+  if (/pkce|code verifier|flow_state_not_found|flow state.*(missing|not found)|auth code and code verifier/.test(message)) {
+    return "This email link was opened in a different browser or its sign-in session expired. Request a fresh email and open it in the same browser where you started.";
+  }
+  if (/signup.*(disabled|not allowed)|signups?_disabled|signups? not allowed|registration.*disabled/.test(message)) {
+    return "New registrations are currently disabled by the authentication provider. The CrediSafe administrator must enable email sign-ups in Supabase Auth settings.";
+  }
+  if (/database error saving new user|error creating user|failed to save user|profiles?.*does not exist|relation .*does not exist|database.*trigger/.test(message)) {
+    return "The authentication database rejected account creation. The administrator must check the Supabase profile-table migration and the new-user trigger.";
+  }
+  if (/email provider.*(disabled|not enabled)|email.*provider.*not enabled/.test(message)) {
+    return "Email/password sign-in is disabled in the authentication provider. The CrediSafe administrator must enable the Email provider in Supabase Auth settings.";
+  }
+  if (/invalid api key|no api key found|invalid jwt|invalid authentication credentials/.test(message)) {
+    return "The website's authentication key was rejected by Supabase. The administrator must verify the project's URL and publishable/anon key in Vercel.";
+  }
   if (/rate limit|too many requests|429|email rate limit/.test(message)) {
     return "Too many attempts were made in a short time. Wait a few minutes before trying again.";
   }
