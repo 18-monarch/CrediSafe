@@ -1,5 +1,7 @@
 const REDIRECT_MESSAGES: Record<string, string> = {
   confirmation_failed: "This authentication link could not be verified. It may have expired or already been used. Request a new link or use password recovery.",
+  pkce_failed: "This email link was opened in a different browser or the original sign-in session expired. Request a fresh email and open it in the same browser where you started.",
+  redirect_not_allowed: "Supabase rejected the confirmation redirect. The administrator must allow https://credi-safe.vercel.app/auth/callback under Authentication → URL Configuration.",
   auth_unavailable: "Secure sign-in is temporarily unavailable. Please try again later.",
   password_updated: "Your password has been updated. Sign in with your new password.",
   recovery_link_failed: "This password-recovery link is invalid or expired. Request a new reset email and open the newest message.",
@@ -9,6 +11,31 @@ const REDIRECT_MESSAGES: Record<string, string> = {
 export function getAuthRedirectMessage(code: string | null | undefined): string | null {
   if (!code) return null;
   return REDIRECT_MESSAGES[code] ?? REDIRECT_MESSAGES.link_failed;
+}
+
+/**
+ * Map provider callback failures to a short safe code. Never send provider
+ * descriptions, tokens, email addresses, or raw callback parameters to logs/UI.
+ */
+export function getAuthCallbackFailureCode(error: unknown): string {
+  const raw = error instanceof Error
+    ? `${error.name} ${error.message}`
+    : String(error ?? "");
+  const message = raw.toLowerCase();
+
+  if (/pkce|code verifier|flow_state_not_found|flow state|auth code and code verifier/.test(message)) {
+    return "pkce_failed";
+  }
+  if (/redirect.*(not allowed|allowlist|allow list)|redirect_uri|redirect_to/.test(message)) {
+    return "redirect_not_allowed";
+  }
+  if (/invalid api key|no api key found|invalid jwt|invalid authentication credentials/.test(message)) {
+    return "auth_unavailable";
+  }
+  if (/otp_expired|expired.*(token|link|otp)|invalid.*(token|otp|link)|token.*(expired|invalid)/.test(message)) {
+    return "confirmation_failed";
+  }
+  return "confirmation_failed";
 }
 
 export function getFriendlyAuthError(error: unknown): string {
