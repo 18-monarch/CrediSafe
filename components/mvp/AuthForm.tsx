@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowRight, LockKeyhole, Mail, UserRound } from "lucide-react";
+import { ArrowRight, Fingerprint, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseConfigIssue, isSupabaseConfigured } from "@/lib/supabase/config";
 import { getAuthRedirectMessage, getFriendlyAuthError } from "@/lib/supabase/authMessages";
@@ -25,10 +25,12 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
   const [resending, setResending] = useState(false);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const configured = isSupabaseConfigured();
+  const passkeyEnabled = process.env.NEXT_PUBLIC_SUPABASE_PASSKEY_ENABLED === "true";
   // Local demo mode is convenient for development, but is never an auth bypass in production.
   const allowLocalDemo = process.env.NODE_ENV !== "production";
 
@@ -115,6 +117,23 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     }
   }
 
+  async function signInWithPasskey() {
+    const supabase = createClient();
+    if (!supabase || !passkeyEnabled || mode !== "login") return;
+    setPasskeyBusy(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.auth.signInWithPasskey();
+      if (error) throw error;
+      router.replace(safeReturnPath(params.get("next"), "/app/dashboard"));
+      router.refresh();
+    } catch (error) {
+      setMessage(getFriendlyAuthError(error));
+    } finally {
+      setPasskeyBusy(false);
+    }
+  }
+
   async function resendConfirmation() {
     const supabase = createClient();
     const normalizedEmail = email.trim().toLowerCase();
@@ -179,6 +198,14 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             <ArrowRight size={18} />
           </button>
         </form>
+
+        {mode === "login" && configured && passkeyEnabled && (
+          <button className="auth-secondary-button" type="button"
+            disabled={busy || resending || passkeyBusy} onClick={signInWithPasskey}>
+            <Fingerprint size={18} />
+            {passkeyBusy ? "Waiting for passkey…" : "Sign in with passkey"}
+          </button>
+        )}
 
         {awaitingConfirmation && configured && (
           <button className="auth-secondary-button" type="button" disabled={resending || busy} onClick={resendConfirmation}>
