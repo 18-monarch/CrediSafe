@@ -77,7 +77,7 @@ export function TeamMfaSetup() {
 
   async function confirm() {
     const api = createClient();
-    if (!api || !factorId || !/^\\d{6}$/.test(code)) { setMessage("Enter a valid 6-digit authenticator code."); return; }
+    if (!api || !factorId || !/^\d{6}$/.test(code)) { setMessage("Enter a valid 6-digit authenticator code."); return; }
     setBusy(true);
     try {
       const challenge = await api.auth.mfa.challenge({ factorId });
@@ -139,7 +139,7 @@ export function TeamMfaSetup() {
         {!verified && factorId && <div className="space-y-4">
           <label className="block text-sm text-slate-200">6-digit authenticator code
             <input className="mt-2 w-full rounded-xl border border-white/20 bg-[#142c32] p-3 text-white" value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\\D/g, "").slice(0, 6))}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
               inputMode="numeric" autoComplete="one-time-code" maxLength={6} disabled={busy} />
           </label>
           <button type="button" onClick={confirm} disabled={busy} className="w-full rounded-xl bg-emerald-400 p-3 font-bold text-[#082119] disabled:opacity-60">{busy ? "Verifying…" : "Verify authenticator"}</button>
