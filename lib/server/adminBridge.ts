@@ -66,3 +66,37 @@ export async function callAdminBackend<T = unknown>(
     return { ok: false, status: 503, data: null, error: "Unable to reach the admin service." };
   }
 }
+
+export type AdminBridgeHealth = {
+  status: "ok" | "not_configured" | "rejected" | "unavailable";
+  detail: string;
+};
+
+export async function checkLegacyBridgeSecret(): Promise<AdminBridgeHealth> {
+  if (!SECRET || SECRET.length < 32) {
+    return { status: "not_configured", detail: "Vercel bridge secret is missing or too short." };
+  }
+  try {
+    const response = await fetch(`${BACKEND_ORIGIN}/v1/internal/overview`, {
+      method: "GET",
+      headers: {
+        "x-credisafe-admin-bridge": SECRET,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+    // Consume and immediately discard the de-identified overview. The setup
+    // page receives only a boolean-like status and never operational records.
+    await response.text();
+    if (response.ok) {
+      return { status: "ok", detail: "Render accepted the shared bridge credential and its read-only database query succeeded." };
+    }
+    if (response.status === 403 || response.status === 503) {
+      return { status: "rejected", detail: "Render rejected or has not enabled the matching bridge credential." };
+    }
+    return { status: "unavailable", detail: `Render bridge probe returned HTTP ${response.status}.` };
+  } catch {
+    return { status: "unavailable", detail: "Render bridge could not be reached from this website deployment." };
+  }
+}
