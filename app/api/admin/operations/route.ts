@@ -2,6 +2,11 @@ import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/admin";
 import { callAdminBackend } from "@/lib/server/adminBridge";
+import {
+  isSupabaseConfigured,
+  supabasePublishableKey,
+  supabaseUrl,
+} from "@/lib/supabase/config";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -45,7 +50,48 @@ export async function GET(request: NextRequest) {
 
   const response = await callAdminBackend(auth.userId, path, "GET");
   if (!response.ok) return json({ error: response.error || "Admin data unavailable" }, response.status);
-  return json({ ...((response.data && typeof response.data === "object") ? response.data : {}), adminRole: auth.role });
+  const payload = response.data && typeof response.data === "object" && !Array.isArray(response.data)
+    ? response.data as Record<string, unknown>
+    : {};
+
+  if (resource === "health") {
+    let supabaseStatus = "not_configured";
+    let supabaseDetail = "Website Supabase settings are not configured.";
+    if (isSupabaseConfigured()) {
+      try {
+        const providerResponse = await fetch(new URL("/auth/v1/settings", supabaseUrl), {
+          method: "GET",
+          headers: {
+            apikey: supabasePublishableKey,
+            Authorization: `Bearer ${supabasePublishableKey}`,
+            Accept: "application/json",
+          },
+          cache: "no-store",
+          signal: AbortSignal.timeout(5000),
+        });
+        supabaseStatus = providerResponse.ok ? "ok" : "degraded";
+        supabaseDetail = providerResponse.ok
+          ? "Supabase Auth settings endpoint responded."
+          : `Supabase Auth returned HTTP ${providerResponse.status}.`;
+      } catch {
+        supabaseStatus = "degraded";
+        supabaseDetail = "Supabase Auth could not be reached from this deployment.";
+      }
+    }
+    const services = (payload.services && typeof payload.services === "object")
+      ? payload.services as Record<string, unknown>
+      : {};
+    return json({
+      ...payload,
+      services: {
+        ...services,
+        supabase: { status: supabaseStatus, detail: supabaseDetail },
+        vercel: { status: "ok", detail: "This authenticated operations request is being served by the current Vercel deployment." },
+      },
+      adminRole: auth.role,
+    });
+  }
+  return json({ ...payload, adminRole: auth.role });
 }
 
 export async function POST(request: NextRequest) {
