@@ -241,7 +241,7 @@ export function OperationsCenter() {
             e.reason || e.reason_code || "—", e.ruleset_version || e.engine_version || "—",
           ])} empty="No XP ledger entries found."/>
           {can(["OWNER"]) && <div className="ops-inline-action"><div><strong>Manual XP correction</strong><small>Owner only · bounded adjustments · immutable ledger entry</small></div>
-            <button className="ops-button primary" onClick={() => { setModal({type:"adjust-xp",title:"Adjust XP balance"}); setDelta("10"); setReason(""); }}>Create adjustment</button></div>}
+            <button className="ops-button primary" onClick={() => { setModal({type:"adjust-xp",title:"Adjust XP balance",operationId:crypto.randomUUID()}); setDelta("10"); setReason(""); }}>Create adjustment</button></div>}
         </section>}
 
         {section === "releases" && <section className="ops-panel">
@@ -253,7 +253,7 @@ export function OperationsCenter() {
           </article>)}</div> : <Empty title="No release metadata" detail="Release information is unavailable or no Android releases have been published."/>}
         </section>}
 
-        {section === "config" && <ConfigPanel data={data} role={role} onSave={(key, value) => { setModal({type:"update-config",title:"Update " + key,key,value}); setReason(""); }}/>}
+        {section === "config" && <ConfigPanel data={data} role={role} onSave={(key, value) => { setModal({type:"update-config",title:"Update " + key,key,value,operationId:crypto.randomUUID()}); setReason(""); }}/>}
         {section === "health" && <HealthPanel data={data}/>}
         {section === "audit" && <section className="ops-panel">
           <div className="ops-panel-head"><div><h2>Administrative audit history</h2><p>Who did what, when and why. This record is append-only to the application.</p></div><span className="ops-count">{(data.logs || []).length} entries</span></div>
@@ -266,10 +266,10 @@ export function OperationsCenter() {
           <div className="ops-panel-head"><div><h2>Team access</h2><p>Supabase Auth UUIDs map to roles stored in Neon. MFA is required for every admin session.</p></div><span className="ops-count">Owner-controlled</span></div>
           {can(["OWNER"]) ? <div className="ops-team-add"><input value={teamUserId} onChange={e=>setTeamUserId(e.target.value)} placeholder="Supabase Auth user UUID"/>
             <select value={teamRole} onChange={e=>setTeamRole(e.target.value as Role)}>{(["ADMIN","SUPPORT","ANALYST","AUDITOR","OWNER"] as Role[]).map(v=><option key={v}>{v}</option>)}</select>
-            <button className="ops-button primary" onClick={() => { setModal({type:"team-upsert",title:"Add or update team member",userId:teamUserId,role:teamRole,status:"ACTIVE"}); setReason(""); }} disabled={!teamUserId}>Save member</button></div> : <div className="ops-alert neutral"><Lock size={16}/> Only the Owner can manage team access.</div>}
+            <button className="ops-button primary" onClick={() => { setModal({type:"team-upsert",title:"Add or update team member",userId:teamUserId,role:teamRole,status:"ACTIVE",operationId:crypto.randomUUID()}); setReason(""); }} disabled={!teamUserId}>Save member</button></div> : <div className="ops-alert neutral"><Lock size={16}/> Only the Owner can manage team access.</div>}
           <DataTable headers={["Member UUID","Role","Status","Actions recorded","Updated","Access"]} rows={(data.members || []).map((m: AnyRecord) => [
             shortId(m.user_id), m.role, <span className={statusClass(m.status)}>{m.status}</span>, number(m.actions_count), date(m.updated_at),
-            can(["OWNER"]) && m.user_id !== data.currentUserId ? <button className="ops-button subtle" key="revoke" onClick={() => { setModal({type:"team-upsert",title:"Revoke team access",userId:m.user_id,role:m.role,status:"REVOKED"}); setReason(""); }}>Revoke</button> : "—",
+            can(["OWNER"]) && m.user_id !== data.currentUserId ? <button className="ops-button subtle" key="revoke" onClick={() => { setModal({type:"team-upsert",title:"Revoke team access",userId:m.user_id,role:m.role,status:"REVOKED",operationId:crypto.randomUUID()}); setReason(""); }}>Revoke</button> : "—",
           ])} empty="No team members are registered yet. The first Owner is created through the UUID allowlist bootstrap."/>
         </section>}
       </div>
@@ -285,8 +285,8 @@ export function OperationsCenter() {
             <h3>Recent journeys</h3><div className="ops-mini-list">{(selectedUser.recentTrips || []).map((t: AnyRecord)=><div key={t.id}><strong>{shortId(t.id)}</strong><span>{t.status}</span><small>{date(t.started_at)}</small></div>)}</div>
             <h3>Recent XP ledger</h3><div className="ops-mini-list">{(selectedUser.recentXp || []).map((x: AnyRecord,i:number)=><div key={x.id || i}><strong>{x.delta_xp ?? x.points} XP</strong><span>{x.reason_code || x.reason || "Award"}</span><small>{date(x.created_at)}</small></div>)}</div>
             {(can(["OWNER","ADMIN","SUPPORT"])) && <div className="ops-drawer-actions">
-              {selectedUser.user.account_status === "SUSPENDED" ? <button className="ops-button primary" onClick={() => { setModal({type:"restore-user",title:"Restore account",userId:selectedUser.user.id}); setReason(""); }}>Restore account</button> : can(["OWNER","ADMIN"]) && <button className="ops-button danger" onClick={() => { setModal({type:"suspend-user",title:"Suspend account",userId:selectedUser.user.id}); setReason(""); }}>Suspend account</button>}
-              <button className="ops-button subtle" onClick={() => { setModal({type:"revoke-sessions",title:"Revoke all sessions",userId:selectedUser.user.id}); setReason(""); }}>Revoke sessions</button>
+              {selectedUser.user.account_status === "SUSPENDED" ? <button className="ops-button primary" onClick={() => { setModal({type:"restore-user",title:"Restore account",userId:selectedUser.user.id,operationId:crypto.randomUUID()}); setReason(""); }}>Restore account</button> : can(["OWNER","ADMIN"]) && <button className="ops-button danger" onClick={() => { setModal({type:"suspend-user",title:"Suspend account",userId:selectedUser.user.id,operationId:crypto.randomUUID()}); setReason(""); }}>Suspend account</button>}
+              <button className="ops-button subtle" onClick={() => { setModal({type:"revoke-sessions",title:"Revoke all sessions",userId:selectedUser.user.id,operationId:crypto.randomUUID()}); setReason(""); }}>Revoke sessions</button>
             </div>}
           </>}
         </div>
@@ -322,15 +322,15 @@ export function OperationsCenter() {
         <label className="ops-field">Reason (required)<textarea rows={3} value={reason} onChange={e=>setReason(e.target.value)} placeholder="Explain why this action is necessary (8–500 characters)."/></label>
         <div className="ops-modal-actions"><button className="ops-button subtle" onClick={()=>setModal(null)} disabled={busy}>Cancel</button>
           <button className={"ops-button "+(["suspend-user","revoke-sessions","team-upsert"].includes(modal.type) && modal.status !== "ACTIVE" ? "danger" : "primary")} disabled={busy || reason.trim().length < 8} onClick={()=>{
-            if (modal.type === "suspend-user") void submitAction("suspend-user",{userId:modal.userId});
-            else if (modal.type === "restore-user") void submitAction("restore-user",{userId:modal.userId});
-            else if (modal.type === "revoke-sessions") void submitAction("revoke-sessions",{userId:modal.userId});
-            else if (modal.type === "adjust-xp") void submitAction("adjust-xp",{userId:modal.userId,delta:Number(delta)});
-            else if (modal.type === "team-upsert") void submitAction("upsert-team-member",{userId:modal.userId,role:modal.role,status:modal.status});
+            if (modal.type === "suspend-user") void submitAction("suspend-user",{userId:modal.userId,operationId:modal.operationId});
+            else if (modal.type === "restore-user") void submitAction("restore-user",{userId:modal.userId,operationId:modal.operationId});
+            else if (modal.type === "revoke-sessions") void submitAction("revoke-sessions",{userId:modal.userId,operationId:modal.operationId});
+            else if (modal.type === "adjust-xp") void submitAction("adjust-xp",{userId:modal.userId,delta:Number(delta),operationId:modal.operationId});
+            else if (modal.type === "team-upsert") void submitAction("upsert-team-member",{userId:modal.userId,role:modal.role,status:modal.status,operationId:modal.operationId});
             else if (modal.type === "update-config") {
               let value=modal.value;
               try { if(modal.key==="feature_flags") value=JSON.parse(configJson); } catch { setError("Feature flags must be valid JSON."); return; }
-              void submitAction("update-config",{key:modal.key,value});
+              void submitAction("update-config",{key:modal.key,value,operationId:modal.operationId});
             }
           }}>{busy ? "Processing…" : "Confirm and record"}</button>
         </div>
