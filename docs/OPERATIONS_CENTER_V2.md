@@ -23,16 +23,37 @@ The Operations Center extends the existing private /admin Team Control Center. I
 
 Every administrator must have an explicit admin_members record in Neon and a Supabase session with MFA assurance level AAL2. The backend rechecks the role for every operation; hiding a button in the UI is not authorization.
 
+## Dedicated Platform Owner account
+
+Use a dedicated mailbox controlled by the CrediSafe operator and invite it directly in Supabase Dashboard → Authentication → Users. Do not create the Owner through the public driver registration flow, and do not create a row in the Android users table. This keeps the operations identity separate from driver accounts and their XP/trips.
+
+The new account must have a confirmed email address, a unique owner-controlled sign-in method, and be used only for platform operations. Enroll a TOTP authenticator and verify it to reach AAL2 before opening /admin. After TOTP verification, register at least one passkey. Prefer a second passkey on a separate trusted device or hardware security key for recovery.
+
+### Passkey configuration
+
+The website uses Supabase JS 2.108.x, which is new enough for the current Supabase passkey APIs. Passkey APIs are experimental and must be explicitly enabled. They are an additional phishing-resistant sign-in credential, not a replacement for the stable TOTP second factor currently enforced by CrediSafe's AAL2 gate.
+
+In Supabase Dashboard → Authentication → Passkeys:
+- Enable Passkey authentication.
+- Relying Party Display Name: CrediSafe
+- Relying Party ID: credi-safe.vercel.app
+- Relying Party Origins: https://credi-safe.vercel.app
+
+Keep this RP ID stable; changing it invalidates previously enrolled passkeys. After enabling the dashboard setting, set the Vercel Production environment variable NEXT_PUBLIC_SUPABASE_PASSKEY_ENABLED=true and redeploy the website. The /team/security page supports passkey registration and management for a signed-in Owner at AAL2. The login page offers passkey sign-in only when this public feature switch is enabled.
+
+If CrediSafe later moves to a custom domain, plan a passkey migration before changing the RP ID. Do not casually change the RP ID.
+
 ## Initial Owner bootstrap
 
-1. Sign into the website with the Supabase account intended to own CrediSafe.
+1. Create or choose the dedicated operations mailbox, then invite it from Supabase Dashboard → Authentication → Users. Confirm the invitation and complete its sign-in setup.
 2. Visit /team/security. If not yet approved, the page displays that account's Supabase Auth UUID.
 3. In Vercel project credi-safe, set server-only environment variable CREDISAFE_ADMIN_USER_IDS to the exact UUID. Apply to Production. Preview should be enabled only when team previews are intentionally used.
 4. Ensure CREDISAFE_ADMIN_BRIDGE_SECRET is the same random 32+ character secret in Vercel and the Render Android backend. It must never be named NEXT_PUBLIC_*.
 5. Redeploy Vercel and Render if the environment values were changed.
 6. Return to /team/security. The first signed, allowlisted authorization request inserts the initial OWNER membership and writes an audit record.
-7. Enroll and verify a TOTP authenticator. The admin panel requires Supabase AAL2.
-8. Remove temporary/incorrect UUIDs from the allowlist after bootstrap; the persisted OWNER membership remains authoritative. Keep an emergency owner process documented.
+7. Enroll and verify a TOTP authenticator. Confirm the session reaches AAL2; the admin panel requires this stable second factor.
+8. Enable passkeys in Supabase and the Vercel feature switch as described above, redeploy, and register the Owner passkey from /team/security.
+9. Remove temporary/incorrect UUIDs from the allowlist after bootstrap; the persisted OWNER membership remains authoritative. Keep an emergency owner process documented.
 
 An allowlisted UUID is only eligible for the initial OWNER bootstrap; it does not bypass login, MFA, backend role checks or signed requests. Never add a shared or public test account.
 
@@ -78,8 +99,10 @@ For future environments, run this migration before deploying backend code that r
 - [ ] Render deploy is live on the backend admin commit.
 - [ ] Vercel production deploy is live on the website admin commit.
 - [ ] The Render and Vercel bridge secrets match.
+- [ ] Dedicated Platform Owner account is invited and its email is confirmed.
 - [ ] Owner UUID is explicitly allowlisted in Vercel.
-- [ ] Owner bootstrap succeeds and the TOTP MFA flow reaches AAL2.
+- [ ] Owner bootstrap succeeds and TOTP MFA reaches AAL2.
+- [ ] Passkey feature is enabled in Supabase and Vercel; Owner passkey registration succeeds.
 - [ ] /admin works for OWNER and denies a non-admin.
 - [ ] Test SUPPORT masking and role restrictions.
 - [ ] Test suspension, login denial, refresh denial and API 403 with a dedicated test account.
