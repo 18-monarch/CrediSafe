@@ -1,4 +1,4 @@
-import { createHash, createHmac } from "node:crypto";
+import { createHash, createHmac, randomUUID } from "node:crypto";
 
 const BACKEND_ORIGIN = "https://credisafeandroid.onrender.com";
 const SECRET = process.env.CREDISAFE_ADMIN_BRIDGE_SECRET;
@@ -27,15 +27,18 @@ export async function callAdminBackend<T = unknown>(
   }
 
   const timestamp = String(Date.now());
+  const requestId = randomUUID();
+  const signedPath = relativePath + (queryString ? `?${queryString}` : "");
   const payloadBody = body ?? {};
   const serializedBody = JSON.stringify(payloadBody);
   const bodyHash = createHash("sha256").update(serializedBody).digest("hex");
   const signaturePayload = [
     method,
-    relativePath,
+    signedPath,
     timestamp,
     userId,
     bootstrapOwner ? "1" : "0",
+    requestId,
     bodyHash,
   ].join("\n");
   const signature = createHmac("sha256", SECRET).update(signaturePayload).digest("hex");
@@ -49,6 +52,7 @@ export async function callAdminBackend<T = unknown>(
         "x-admin-user-id": userId,
         "x-admin-timestamp": timestamp,
         "x-admin-signature": signature,
+        "x-admin-request-id": requestId,
         "x-admin-bootstrap-owner": bootstrapOwner ? "true" : "false",
       },
       ...(method === "POST" ? { body: serializedBody } : {}),
