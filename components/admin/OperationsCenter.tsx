@@ -424,7 +424,7 @@ function HealthPanel({data}:{data:AnyRecord}) {
   const items=[
     {key:"render",label:"Render Android API",description:"Production API process and endpoint reachability.",icon:Cloud},
     {key:"neon",label:"Neon PostgreSQL",description:"Database query health from the Render service.",icon:Database},
-    {key:"supabase",label:"Supabase Auth",description:"Website authentication provider reachability.",icon:ShieldCheckIcon},
+    {key:"supabase",label:"Supabase Auth",description:"Website authentication provider reachability.",icon:Shield},
     {key:"vercel",label:"Vercel website runtime",description:"This authenticated request is currently served by the production web deployment.",icon:Activity},
   ];
   return <section className="ops-panel"><div className="ops-panel-head"><div><h2>Service health checks</h2><p>Point-in-time checks, not historical uptime or an SLA.</p></div><Gauge size={19}/></div>
