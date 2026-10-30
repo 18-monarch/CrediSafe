@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAllowedAdmin } from "@/lib/server/adminAuth";
-import { callAdminBackend } from "@/lib/server/adminBridge";
+import { callAdminBackend, checkLegacyBridgeSecret } from "@/lib/server/adminBridge";
 import { TeamMfaSetup } from "@/components/admin/TeamMfaSetup";
 import { AdminBootstrapInfo } from "@/components/admin/AdminBootstrapInfo";
 
@@ -18,19 +18,24 @@ export default async function TeamSecurityPage() {
     result.data.user.id,
     process.env.CREDISAFE_ADMIN_USER_IDS,
   );
-  const membership = await callAdminBackend(
-    result.data.user.id,
-    "/authz",
-    "GET",
-    undefined,
-    allowedToBootstrap,
-  );
+  const [membership, bridgeHealth] = await Promise.all([
+    callAdminBackend(
+      result.data.user.id,
+      "/authz",
+      "GET",
+      undefined,
+      allowedToBootstrap,
+    ),
+    checkLegacyBridgeSecret(),
+  ]);
 
   if (!membership.ok) {
     return <AdminBootstrapInfo
       userId={result.data.user.id}
       allowlisted={allowedToBootstrap}
       message={membership.error || "This account is not yet approved for CrediSafe team access."}
+      bridgeStatus={bridgeHealth.status}
+      bridgeDetail={bridgeHealth.detail}
     />;
   }
 
