@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { hasAdminPermission } from "../lib/server/adminBridge";
+import { hasAdminPermission } from "../lib/server/adminPermissions";
 
 test("owner has every operations permission", () => {
   for (const permission of ["overview:read","users:read","users:write","trips:read","xp:read","audit:read","team:read","team:manage","config:read","config:write","system:read"] as const) {
