@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import {
   Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, BadgeCheck, BarChart3,
   Bell, CheckCircle2, ChevronRight, CircleHelp, Cloud, Database, Download,
@@ -266,7 +267,7 @@ export function OperationsCenter() {
           {can(["OWNER"]) ? <div className="ops-team-add"><input value={teamUserId} onChange={e=>setTeamUserId(e.target.value)} placeholder="Supabase Auth user UUID"/>
             <select value={teamRole} onChange={e=>setTeamRole(e.target.value as Role)}>{(["ADMIN","SUPPORT","ANALYST","AUDITOR","OWNER"] as Role[]).map(v=><option key={v}>{v}</option>)}</select>
             <button className="ops-button primary" onClick={() => { setModal({type:"team-upsert",title:"Add or update team member",userId:teamUserId,role:teamRole,status:"ACTIVE"}); setReason(""); }} disabled={!teamUserId}>Save member</button></div> : <div className="ops-alert neutral"><Lock size={16}/> Only the Owner can manage team access.</div>}
-          <DataTable headers={["Member UUID","Role","Status","Actions recorded","Updated"]} rows={(data.members || []).map((m: AnyRecord) => [
+          <DataTable headers={["Member UUID","Role","Status","Actions recorded","Updated","Access"]} rows={(data.members || []).map((m: AnyRecord) => [
             shortId(m.user_id), m.role, <span className={statusClass(m.status)}>{m.status}</span>, number(m.actions_count), date(m.updated_at),
             can(["OWNER"]) && m.user_id !== data.currentUserId ? <button className="ops-button subtle" key="revoke" onClick={() => { setModal({type:"team-upsert",title:"Revoke team access",userId:m.user_id,role:m.role,status:"REVOKED"}); setReason(""); }}>Revoke</button> : "—",
           ])} empty="No team members are registered yet. The first Owner is created through the UUID allowlist bootstrap."/>
@@ -358,7 +359,7 @@ function SearchBar({value,onChange,onSubmit,placeholder}:{value:string;onChange:
   return <form className="ops-search" onSubmit={e=>{e.preventDefault();onSubmit();}}><Search size={16}/><input value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}/><button className="ops-button subtle">Search</button></form>;
 }
 
-function DataTable({headers,rows,empty}:{headers:string[];rows:React.ReactNode[][];empty:string}) {
+function DataTable({headers,rows,empty}:{headers:string[];rows:ReactNode[][];empty:string}) {
   return <div className="ops-table-wrap">{rows.length ? <table className="ops-table"><thead><tr>{headers.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i}>{row.map((cell,j)=><td key={j}>{cell}</td>)}</tr>)}</tbody></table> : <Empty title="Nothing to display" detail={empty}/>}</div>;
 }
 
