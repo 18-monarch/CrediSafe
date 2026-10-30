@@ -15,6 +15,10 @@ const permissions: Record<AdminRole, AdminPermission[]> = {
   AUDITOR: ["overview:read","trips:read","audit:read","team:read","config:read","system:read"],
 };
 
+export function hasAdminPermission(role: AdminRole, permission: AdminPermission): boolean {
+  return permissions[role]?.includes(permission) ?? false;
+}
+
 const BRIDGE_ORIGIN = "https://credisafeandroid.onrender.com";
 
 async function bridge(path: string, init: RequestInit = {}) {
@@ -76,7 +80,7 @@ export async function requireAdmin(permission: AdminPermission = "overview:read"
     return { ok: false as const, status: 503 as const, message };
   }
 
-  if (!role || !permissions[role]?.includes(permission)) {
+  if (!role || !hasAdminPermission(role, permission)) {
     return { ok: false as const, status: 403 as const, message: "Your admin role does not allow this action." };
   }
 
