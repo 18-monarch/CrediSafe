@@ -20,7 +20,9 @@ export async function callAdminBackend<T = unknown>(
   if (!SECRET || SECRET.length < 32) {
     return { ok: false, status: 503, data: null, error: "Admin bridge is not configured." };
   }
-  if (!path.startsWith("/") || path.includes("..") || path.includes("?")) {
+  const [relativePath, queryString = ""] = path.split("?", 2);
+  if (!relativePath.startsWith("/") || relativePath.includes("..") || relativePath.startsWith("//") ||
+      path.split("?").length > 2) {
     return { ok: false, status: 400, data: null, error: "Invalid admin operation path." };
   }
 
@@ -30,7 +32,7 @@ export async function callAdminBackend<T = unknown>(
   const bodyHash = createHash("sha256").update(serializedBody).digest("hex");
   const signaturePayload = [
     method,
-    path,
+    relativePath,
     timestamp,
     userId,
     bootstrapOwner ? "1" : "0",
@@ -39,7 +41,7 @@ export async function callAdminBackend<T = unknown>(
   const signature = createHmac("sha256", SECRET).update(signaturePayload).digest("hex");
 
   try {
-    const response = await fetch(`${BACKEND_ORIGIN}/v1/internal/admin${path}`, {
+    const response = await fetch(`${BACKEND_ORIGIN}/v1/internal/admin${relativePath}${queryString ? `?${queryString}` : ""}`, {
       method,
       headers: {
         Accept: "application/json",
