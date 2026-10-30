@@ -30,9 +30,13 @@ export async function requireAdmin(permission: AdminPermission = "overview:read"
   }
 
   if (process.env.CREDISAFE_ADMIN_REQUIRE_MFA !== "false") {
-    const assurance = await auth.supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (assurance.error || assurance.data?.currentLevel !== "aal2") {
-      return { ok: false as const, status: 403 as const, message: "Admin account requires verified MFA (AAL2)." };
+    try {
+      const assurance = await auth.supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assurance.error || assurance.data?.currentLevel !== "aal2") {
+        return { ok: false as const, status: 403 as const, message: "Admin account requires verified MFA (AAL2)." };
+      }
+    } catch {
+      return { ok: false as const, status: 503 as const, message: "Unable to verify admin MFA. Please retry." };
     }
   }
 
