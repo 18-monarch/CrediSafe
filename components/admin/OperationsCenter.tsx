@@ -133,9 +133,18 @@ export function OperationsCenter() {
   }, [reason, load, section, search, selectedUser]);
 
   const reload = () => void load(section, search);
-  const groupedNav = useMemo(() => ["OPERATIONS", "PRODUCT", "PLATFORM"].map(group => ({
-    group, items: navigation.filter(item => item.group === group),
-  })), []);
+  const groupedNav = useMemo(() => {
+    const visible = navigation.filter(item => {
+      if (item.id === "users") return can(["OWNER", "ADMIN", "SUPPORT"]);
+      if (item.id === "xp" || item.id === "config") return can(["OWNER", "ADMIN", "ANALYST", "AUDITOR"]);
+      if (item.id === "audit") return can(["OWNER", "ADMIN", "AUDITOR"]);
+      if (item.id === "team") return can(["OWNER"]);
+      return true;
+    });
+    return ["OPERATIONS", "PRODUCT", "PLATFORM"].map(group => ({
+      group, items: visible.filter(item => item.group === group),
+    })).filter(group => group.items.length > 0);
+  }, [role]);
 
   const openUser = async (id: string) => {
     setBusy(true); setError(""); setSelectedTrip(null);
