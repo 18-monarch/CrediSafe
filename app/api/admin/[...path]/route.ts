@@ -33,6 +33,11 @@ async function handle(request: NextRequest, context: Context, method: string) {
   if (!path?.length || path.some(segment => !/^[a-zA-Z0-9._-]{1,128}$/.test(segment))) {
     return NextResponse.json({ error: "Invalid admin route" }, { status: 400 });
   }
+  // Membership lookup and owner bootstrap are server-only trust-boundary calls,
+  // not browser-accessible admin routes.
+  if (path[0] === "team" && ["member","bootstrap-owner"].includes(path[1] ?? "")) {
+    return NextResponse.json({ error: "Admin route not found" }, { status: 404 });
+  }
   const permission = requiredPermission(path, method);
   if (!permission) return NextResponse.json({ error: "Admin route not found" }, { status: 404 });
   if (method !== "GET" && !sameOrigin(request)) {
