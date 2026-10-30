@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isAllowedAdmin } from "@/lib/server/adminAuth";
+import { isApprovedAdminIdentity } from "@/lib/server/adminBridge";
 import { TeamMfaSetup } from "@/components/admin/TeamMfaSetup";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +11,13 @@ export default async function TeamSecurityPage() {
   if (!supabase) return <p>Team security requires Supabase.</p>;
   const result = await supabase.auth.getUser();
   if (!result.data.user) redirect("/login?next=%2Fteam%2Fsecurity");
-  if (!isAllowedAdmin(result.data.user.id, process.env.CREDISAFE_ADMIN_USER_IDS)) {
-    return <main style={{padding:48}}><h1>Restricted</h1><Link href="/">Return home</Link></main>;
+  const approved = await isApprovedAdminIdentity(result.data.user.id);
+  if (!approved) {
+    return <main style={{padding:48}}>
+      <h1>Restricted team security</h1>
+      <p>Your Supabase account has not been approved for the CrediSafe team.</p>
+      <Link href="/">Return home</Link>
+    </main>;
   }
   return <TeamMfaSetup />;
 }
