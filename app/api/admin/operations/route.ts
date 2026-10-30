@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/admin";
 import { callAdminBackend } from "@/lib/server/adminBridge";
@@ -48,6 +49,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  if (!origin || origin !== request.nextUrl.origin) {
+    return json({ error: "Cross-origin administrative requests are not accepted" }, 403);
+  }
+
   const auth = await requireAdmin();
   if (!auth.ok) return json({ error: auth.message }, auth.status);
 
@@ -68,7 +74,6 @@ export async function POST(request: NextRequest) {
   let path: string;
   let body: Record<string, unknown>;
   const userId = typeof input.userId === "string" ? input.userId : "";
-  const tripId = typeof input.tripId === "string" ? input.tripId : "";
   const validId = (v: string) => /^[0-9a-f-]{36}$/i.test(v);
 
   switch (action) {
@@ -87,7 +92,7 @@ export async function POST(request: NextRequest) {
         return json({ error: "Invalid user ID or XP adjustment (range -500 to +500)" }, 400);
       }
       path = "/xp/adjust";
-      body = { userId, delta, reason, requestId: crypto.randomUUID() };
+      body = { userId, delta, reason, requestId: randomUUID() };
       break;
     }
     case "update-config":
