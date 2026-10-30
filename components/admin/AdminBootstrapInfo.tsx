@@ -7,10 +7,14 @@ export function AdminBootstrapInfo({
   userId,
   allowlisted,
   message,
+  bridgeStatus,
+  bridgeDetail,
 }: {
   userId: string;
   allowlisted: boolean;
   message: string;
+  bridgeStatus: "ok" | "not_configured" | "rejected" | "unavailable";
+  bridgeDetail: string;
 }) {
   const [copied, setCopied] = useState(false);
   async function copy() {
@@ -43,6 +47,15 @@ export function AdminBootstrapInfo({
             {copied ? "Copied" : "Copy UUID"}
           </button>
         </div>
+      </div>
+      <div className="mt-6 rounded-2xl border border-white/10 bg-white/[.03] p-5">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <strong className="text-sm">Vercel ↔ Render bridge</strong>
+          <span className={bridgeStatus === "ok" ? "rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-bold text-emerald-200" : "rounded-full bg-amber-400/15 px-3 py-1 text-xs font-bold text-amber-100"}>
+            {bridgeStatus === "ok" ? "Connected" : bridgeStatus === "rejected" ? "Check secret" : bridgeStatus === "not_configured" ? "Not configured" : "Unavailable"}
+          </span>
+        </div>
+        <p className="text-sm leading-6 text-slate-300">{bridgeDetail}</p>
       </div>
       <div className="mt-6 rounded-2xl border border-white/10 bg-white/[.03] p-5">
         <div className="flex items-center gap-2 text-sm font-semibold">
