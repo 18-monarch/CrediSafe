@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isAllowedAdmin } from "@/lib/server/adminAuth";
 import { callAdminBackend } from "@/lib/server/adminBridge";
 import { TeamMfaSetup } from "@/components/admin/TeamMfaSetup";
+import { AdminBootstrapInfo } from "@/components/admin/AdminBootstrapInfo";
 
 export const dynamic = "force-dynamic";
 
@@ -13,21 +14,25 @@ export default async function TeamSecurityPage() {
   const result = await supabase.auth.getUser();
   if (!result.data.user) redirect("/login?next=%2Fteam%2Fsecurity");
 
-  // Permit initial Owner bootstrap and already-approved team members to enroll
-  // MFA. Full admin routes still require AAL2 through requireAdmin().
+  const allowedToBootstrap = isAllowedAdmin(
+    result.data.user.id,
+    process.env.CREDISAFE_ADMIN_USER_IDS,
+  );
   const membership = await callAdminBackend(
     result.data.user.id,
     "/authz",
     "GET",
     undefined,
-    isAllowedAdmin(result.data.user.id, process.env.CREDISAFE_ADMIN_USER_IDS),
+    allowedToBootstrap,
   );
+
   if (!membership.ok) {
-    return <main style={{padding:48,background:"#09121a",color:"#ecf5f3",minHeight:"100vh"}}>
-      <h1>Restricted team area</h1>
-      <p>{membership.error || "Your account is not approved for CrediSafe team access."}</p>
-      <Link href="/">Return to CrediSafe</Link>
-    </main>;
+    return <AdminBootstrapInfo
+      userId={result.data.user.id}
+      allowlisted={allowedToBootstrap}
+      message={membership.error || "This account is not yet approved for CrediSafe team access."}
+    />;
   }
+
   return <TeamMfaSetup />;
 }
