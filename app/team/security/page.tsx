@@ -2,7 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAllowedAdmin } from "@/lib/server/adminAuth";
+import { callAdminBackend, checkLegacyBridgeSecret } from "@/lib/server/adminBridge";
 import { TeamMfaSetup } from "@/components/admin/TeamMfaSetup";
+import { AdminBootstrapInfo } from "@/components/admin/AdminBootstrapInfo";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +13,31 @@ export default async function TeamSecurityPage() {
   if (!supabase) return <p>Team security requires Supabase.</p>;
   const result = await supabase.auth.getUser();
   if (!result.data.user) redirect("/login?next=%2Fteam%2Fsecurity");
-  if (!isAllowedAdmin(result.data.user.id, process.env.CREDISAFE_ADMIN_USER_IDS)) {
-    return <main style={{padding:48}}><h1>Restricted</h1><Link href="/">Return home</Link></main>;
+
+  const allowedToBootstrap = isAllowedAdmin(
+    result.data.user.id,
+    process.env.CREDISAFE_ADMIN_USER_IDS,
+  );
+  const [membership, bridgeHealth] = await Promise.all([
+    callAdminBackend(
+      result.data.user.id,
+      "/authz",
+      "GET",
+      undefined,
+      allowedToBootstrap,
+    ),
+    checkLegacyBridgeSecret(),
+  ]);
+
+  if (!membership.ok) {
+    return <AdminBootstrapInfo
+      userId={result.data.user.id}
+      allowlisted={allowedToBootstrap}
+      message={membership.error || "This account is not yet approved for CrediSafe team access."}
+      bridgeStatus={bridgeHealth.status}
+      bridgeDetail={bridgeHealth.detail}
+    />;
   }
+
   return <TeamMfaSetup />;
 }

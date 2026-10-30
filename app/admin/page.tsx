@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { ControlCenter } from "@/components/admin/ControlCenter";
+import { OperationsCenter } from "@/components/admin/OperationsCenter";
+
 export const metadata: Metadata = {
-  title: "Team Control Center | CrediSafe",
+  title: "Operations Center | CrediSafe",
   robots: { index: false, follow: false },
-  description: "Private, authenticated CrediSafe operations dashboard.",
+  description: "Private CrediSafe platform operations and governance console.",
 };
+
 export default function AdminPage() {
-  return <ControlCenter />;
+  return <OperationsCenter />;
 }
