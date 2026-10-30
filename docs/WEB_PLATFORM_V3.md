@@ -1,6 +1,9 @@
 # CrediSafe Web Platform v3.0 — iPhone companion + Team Control Center
 
 ## Purpose and scope
+
+**Current admin implementation:** the original read-only Team Control Center has been extended into the CrediSafe Operations Center. See [OPERATIONS_CENTER.md](./OPERATIONS_CENTER.md) for the current role matrix, account actions, trip diagnostics, XP ledger, team governance, versioned configuration, audit history and production bootstrap procedure. This follow-up uses the existing Neon `admin_members`, `admin_audit_logs` and `admin_config` tables.
+
 This milestone adds a useful Safari/PWA entrance for iPhone users and a
 **restricted, read-only** team operations dashboard. It does not pretend that
 browser GPS supports the same background sensors or confidence-aware Android
@@ -30,7 +33,7 @@ Render `/v1/internal/overview` -> aggregated read-only Neon data.
 The bridge never returns email, phone, device IDs, name, latitude/longitude,
 raw GPS samples, or road history. Operational trip IDs are visible only to
 authorized team accounts. All responses are `Cache-Control: private,no-store`.
-There are no admin write endpoints, role-editing screens or raw telemetry exports.
+Admin write endpoints are limited to audited account status/session operations, team membership and allowlisted configuration updates. Raw telemetry exports and raw GPS coordinates remain unavailable.
 
 ### Setup required before team access
 1. Ensure the website has working Supabase authentication.
