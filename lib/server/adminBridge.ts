@@ -97,3 +97,25 @@ export async function adminBridgeFetch(
     },
   });
 }
+
+
+/** Allows an invited member to reach MFA enrollment without granting admin data access. */
+export async function isApprovedAdminIdentity(userId: string): Promise<boolean> {
+  if (isAllowedAdmin(userId, process.env.CREDISAFE_ADMIN_USER_IDS)) {
+    try {
+      const result = await bridge("/team/bootstrap-owner", {
+        method: "POST",
+        body: JSON.stringify({ userId }),
+      });
+      return result.response.ok;
+    } catch {
+      return false;
+    }
+  }
+  try {
+    const result = await bridge(`/team/member/${encodeURIComponent(userId)}`);
+    return result.response.ok && result.data?.member?.status === "ACTIVE";
+  } catch {
+    return false;
+  }
+}
