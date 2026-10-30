@@ -39,7 +39,12 @@ export async function requireAdmin(permission: AdminPermission = "overview:read"
   const isBootstrapOwner = isAllowedAdmin(auth.user.id, process.env.CREDISAFE_ADMIN_USER_IDS);
   let role: AdminRole | null = null;
   try {
-    if (isBootstrapOwner) {
+    const lookup = await bridge(`/team/member/${encodeURIComponent(auth.user.id)}`);
+    const activeMember = lookup.response.ok && lookup.data?.member?.status === "ACTIVE";
+    if (isBootstrapOwner && (!activeMember || lookup.data?.member?.role !== "OWNER")) {
+      if (!lookup.response.ok && lookup.response.status !== 404) {
+        return { ok: false as const, status: 503 as const, message: "Unable to verify the Owner membership. Please retry." };
+      }
       const boot = await bridge("/team/bootstrap-owner", {
         method: "POST",
         body: JSON.stringify({ userId: auth.user.id }),
@@ -50,8 +55,7 @@ export async function requireAdmin(permission: AdminPermission = "overview:read"
       }
       role = "OWNER";
     } else {
-      const lookup = await bridge(`/team/member/${encodeURIComponent(auth.user.id)}`);
-      if (!lookup.response.ok || !lookup.data?.member || lookup.data.member.status !== "ACTIVE") {
+      if (!activeMember) {
         return { ok: false as const, status: 403 as const, message: "Admin access is restricted. Ask an Owner to approve your account." };
       }
       role = lookup.data.member.role as AdminRole;
@@ -89,20 +93,20 @@ export async function adminBridgeFetch(
 
 /** Allows an invited member to reach MFA enrollment without granting admin data access. */
 export async function isApprovedAdminIdentity(userId: string): Promise<boolean> {
-  if (isAllowedAdmin(userId, process.env.CREDISAFE_ADMIN_USER_IDS)) {
-    try {
-      const result = await bridge("/team/bootstrap-owner", {
-        method: "POST",
-        body: JSON.stringify({ userId }),
-      });
-      return result.response.ok;
-    } catch {
-      return false;
-    }
-  }
   try {
-    const result = await bridge(`/team/member/${encodeURIComponent(userId)}`);
-    return result.response.ok && result.data?.member?.status === "ACTIVE";
+    const lookup = await bridge(`/team/member/${encodeURIComponent(userId)}`);
+    if (lookup.response.ok && lookup.data?.member?.status === "ACTIVE") {
+      return isAllowedAdmin(userId, process.env.CREDISAFE_ADMIN_USER_IDS)
+        ? lookup.data.member.role === "OWNER"
+        : true;
+    }
+    if (!isAllowedAdmin(userId, process.env.CREDISAFE_ADMIN_USER_IDS)) return false;
+    if (!lookup.response.ok && lookup.response.status !== 404) return false;
+    const result = await bridge("/team/bootstrap-owner", {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    });
+    return result.response.ok;
   } catch {
     return false;
   }
