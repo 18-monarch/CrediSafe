@@ -285,7 +285,9 @@ export function OperationsCenter() {
             <h3>Recent journeys</h3><div className="ops-mini-list">{(selectedUser.recentTrips || []).map((t: AnyRecord)=><div key={t.id}><strong>{shortId(t.id)}</strong><span>{t.status}</span><small>{date(t.started_at)}</small></div>)}</div>
             <h3>Recent XP ledger</h3><div className="ops-mini-list">{(selectedUser.recentXp || []).map((x: AnyRecord,i:number)=><div key={x.id || i}><strong>{x.delta_xp ?? x.points} XP</strong><span>{x.reason_code || x.reason || "Award"}</span><small>{date(x.created_at)}</small></div>)}</div>
             {(can(["OWNER","ADMIN","SUPPORT"])) && <div className="ops-drawer-actions">
-              {selectedUser.user.account_status === "SUSPENDED" ? <button className="ops-button primary" onClick={() => { setModal({type:"restore-user",title:"Restore account",userId:selectedUser.user.id,operationId:crypto.randomUUID()}); setReason(""); }}>Restore account</button> : can(["OWNER","ADMIN"]) && <button className="ops-button danger" onClick={() => { setModal({type:"suspend-user",title:"Suspend account",userId:selectedUser.user.id,operationId:crypto.randomUUID()}); setReason(""); }}>Suspend account</button>}
+              {can(["OWNER","ADMIN"]) && (selectedUser.user.account_status === "SUSPENDED"
+                ? <button className="ops-button primary" onClick={() => { setModal({type:"restore-user",title:"Restore account",userId:selectedUser.user.id,operationId:crypto.randomUUID()}); setReason(""); }}>Restore account</button>
+                : <button className="ops-button danger" onClick={() => { setModal({type:"suspend-user",title:"Suspend account",userId:selectedUser.user.id,operationId:crypto.randomUUID()}); setReason(""); }}>Suspend account</button>)}
               <button className="ops-button subtle" onClick={() => { setModal({type:"revoke-sessions",title:"Revoke all sessions",userId:selectedUser.user.id,operationId:crypto.randomUUID()}); setReason(""); }}>Revoke sessions</button>
             </div>}
           </>}
