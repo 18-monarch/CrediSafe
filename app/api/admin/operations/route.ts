@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/admin";
 import { callAdminBackend } from "@/lib/server/adminBridge";
@@ -113,6 +112,10 @@ export async function POST(request: NextRequest) {
 
   const reason = typeof input.reason === "string" ? input.reason.trim() : "";
   const action = typeof input.action === "string" ? input.action : "";
+  const operationId = typeof input.operationId === "string" && /^[0-9a-f-]{36}$/i.test(input.operationId)
+    ? input.operationId
+    : "";
+  if (!operationId) return json({ error: "A valid operation ID is required to prevent duplicate changes" }, 400);
   if (reason.length < 8 || reason.length > 500) {
     return json({ error: "A reason between 8 and 500 characters is required for every administrative change" }, 400);
   }
@@ -125,25 +128,25 @@ export async function POST(request: NextRequest) {
   switch (action) {
     case "suspend-user":
       if (!validId(userId)) return json({ error: "Invalid user ID" }, 400);
-      path = `/users/${userId}/suspend`; body = { reason }; break;
+      path = `/users/${userId}/suspend`; body = { reason, operationId }; break;
     case "restore-user":
       if (!validId(userId)) return json({ error: "Invalid user ID" }, 400);
-      path = `/users/${userId}/restore`; body = { reason }; break;
+      path = `/users/${userId}/restore`; body = { reason, operationId }; break;
     case "revoke-sessions":
       if (!validId(userId)) return json({ error: "Invalid user ID" }, 400);
-      path = `/users/${userId}/revoke-sessions`; body = { reason }; break;
+      path = `/users/${userId}/revoke-sessions`; body = { reason, operationId }; break;
     case "adjust-xp": {
       const delta = Number(input.delta);
       if (!validId(userId) || !Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 500) {
         return json({ error: "Invalid user ID or XP adjustment (range -500 to +500)" }, 400);
       }
       path = "/xp/adjust";
-      body = { userId, delta, reason, requestId: randomUUID() };
+      body = { userId, delta, reason, operationId };
       break;
     }
     case "update-config":
       if (typeof input.key !== "string") return json({ error: "Configuration key required" }, 400);
-      path = "/config"; body = { key: input.key, value: input.value, reason }; break;
+      path = "/config"; body = { key: input.key, value: input.value, reason, operationId }; break;
     case "upsert-team-member":
       if (!validId(userId) || typeof input.role !== "string" ||
           !["OWNER", "ADMIN", "SUPPORT", "ANALYST", "AUDITOR"].includes(input.role)) {
@@ -152,7 +155,7 @@ export async function POST(request: NextRequest) {
       if (userId === auth.userId && input.status === "REVOKED") {
         return json({ error: "You cannot revoke your own admin membership" }, 400);
       }
-      path = "/team"; body = { userId, role: input.role, status: input.status === "REVOKED" ? "REVOKED" : "ACTIVE", reason }; break;
+      path = "/team"; body = { userId, role: input.role, status: input.status === "REVOKED" ? "REVOKED" : "ACTIVE", reason, operationId }; break;
     default:
       return json({ error: "Unsupported administrative operation" }, 400);
   }
