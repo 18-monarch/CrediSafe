@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
-  Activity, AlertTriangle, ArrowLeft, ArrowUpRight, BarChart3, CheckCircle2,
-  ChevronRight, CirclePause, ClipboardList, Cloud, Database, ExternalLink,
-  FileText, LayoutDashboard, Lock, RefreshCcw, Route, Search, Server,
-  Settings, ShieldCheck, Smartphone, SlidersHorizontal, Users, UserRound,
+  Activity, AlertTriangle, ArrowUpRight, BarChart3, CheckCircle2,
+  ChevronRight, ClipboardList, Cloud, Database, ExternalLink,
+  LayoutDashboard, Lock, RefreshCcw, Route, Search, Server,
+  Settings, ShieldCheck, SlidersHorizontal, Users,
 } from "lucide-react";
 import type { AdminRole } from "@/lib/server/adminBridge";
 
@@ -99,7 +99,7 @@ export function ControlCenter({ role }: { role: AdminRole }) {
     }
   }, [section, query, statusFilter]);
 
-  useEffect(() => { void load(section); }, [section, load]);
+  useEffect(() => { void load(section); /* search inputs are submitted explicitly */ }, [section]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -150,7 +150,7 @@ export function ControlCenter({ role }: { role: AdminRole }) {
     } catch (e) { setError(e instanceof Error ? e.message : "Session revocation failed."); }
     finally { setBusy(false); }
   }
-  async function addTeamMember(event: React.FormEvent<HTMLFormElement>) {
+  async function addTeamMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const reason = window.prompt("Reason for granting team access (minimum 8 characters):");
     if (!reason || reason.trim().length < 8) return;
