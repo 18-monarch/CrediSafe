@@ -1,23 +1,7 @@
 import { requireUser } from "@/lib/server/auth";
 import { isAllowedAdmin } from "@/lib/server/adminAuth";
-
-export type AdminRole = "OWNER" | "ADMIN" | "SUPPORT" | "ANALYST" | "AUDITOR";
-export type AdminPermission =
-  | "overview:read" | "users:read" | "users:write" | "trips:read"
-  | "xp:read" | "audit:read" | "team:read" | "team:manage"
-  | "config:read" | "config:write" | "system:read";
-
-const permissions: Record<AdminRole, AdminPermission[]> = {
-  OWNER: ["overview:read","users:read","users:write","trips:read","xp:read","audit:read","team:read","team:manage","config:read","config:write","system:read"],
-  ADMIN: ["overview:read","users:read","users:write","trips:read","xp:read","audit:read","team:read","config:read","config:write","system:read"],
-  SUPPORT: ["overview:read","users:read","users:write","trips:read","system:read"],
-  ANALYST: ["overview:read","trips:read","xp:read","system:read"],
-  AUDITOR: ["overview:read","trips:read","audit:read","team:read","config:read","system:read"],
-};
-
-export function hasAdminPermission(role: AdminRole, permission: AdminPermission): boolean {
-  return permissions[role]?.includes(permission) ?? false;
-}
+import { hasAdminPermission, isAdminRole } from "@/lib/server/adminPermissions";
+import type { AdminRole, AdminPermission } from "@/lib/server/adminPermissions";
 
 const BRIDGE_ORIGIN = "https://credisafeandroid.onrender.com";
 
@@ -71,7 +55,7 @@ export async function requireAdmin(permission: AdminPermission = "overview:read"
         return { ok: false as const, status: 403 as const, message: "Admin access is restricted. Ask an Owner to approve your account." };
       }
       role = lookup.data.member.role as AdminRole;
-      if (!(role in permissions)) role = null;
+      if (!isAdminRole(role)) role = null;
     }
   } catch (error) {
     const message = error instanceof Error && error.message === "ADMIN_BRIDGE_NOT_CONFIGURED"
